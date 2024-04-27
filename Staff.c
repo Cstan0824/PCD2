@@ -6,6 +6,10 @@
 #include <conio.h>
 #pragma warning (disable: 4996)
 
+
+
+int isAdmin; 
+char userID[10];
 struct employDate {
 	int days, months, years;
 };
