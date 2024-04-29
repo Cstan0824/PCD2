@@ -57,15 +57,16 @@ void MI_displayDetails(char* memberID);
 void MI_displayDetailsProcess(MI_Member* allMembers, int rows, char* memberID);
 void MI_topUpWallet(char* memberID);
 void MI_memberEditDetails(char* memberID);
+void MI_deleteAccount(char* memberID);
 void TS_showSchedule();
 /*for admin use*/ void MI_displayAllMembers();
 /*for admin use*/ void MI_staffSearchMember();
 /*for admin use*/ void MI_staffDeleteMember();
-void MI_deleteAccount(char* memberID);
-/*for admin use*/ void MI_addMemberViaTxt();
-/*for admin use*/ int MI_getNumberOfNewMembers(char* fileName);
-/*for admin use*/ MI_Member* MI_getNewMemberDetails(char* fileName, int rowsOfNewMembers);
 /*for admin use*/ void MI_staffEditMemberDetails();
+/*for admin use*/ void MI_addMemberViaTxt();
+/*for admin use*/ int MI_getNumberOfNewMembersViaTxt(char* fileName);
+/*for admin use*/ MI_Member* MI_getNewMemberDetailsViaTxt(char* fileName, int rowsOfNewMembers);
+
 
 // Main function
 int main() {
@@ -153,6 +154,43 @@ void MI_memberMenu(char* memberID) {
         MI_memberMenu(memberID);
     }
 };
+
+int MI_getNumberOfMembers() {
+    int rows;
+    FILE* fptr = fopen("member-details.bin", "rb");
+    if (fptr == NULL) {
+        printf("\nError opening file.");
+        exit(-1);
+    }
+
+    // Get the number of members in the file
+    fseek(fptr, 0, SEEK_END);
+    long fileSize = ftell(fptr);
+    rewind(fptr);
+    rows = fileSize / sizeof(MI_Member);
+    fclose(fptr);
+    return rows;
+};
+
+MI_Member* MI_getMemberDetails(int rows) {
+    FILE* fptr = fopen("member-details.bin", "rb");
+    if (fptr == NULL) {
+        printf("\nError opening file.");
+        return NULL;
+    }
+
+    // Allocate memory for member details
+    MI_Member* allMembers = (MI_Member*)malloc((rows) * sizeof(MI_Member));
+    if (allMembers == NULL) {
+        printf("\nMemory allocation failed.");
+        fclose(fptr);
+        return NULL;
+    }
+
+    // Read member details from the binary file
+    fread(allMembers, sizeof(MI_Member), rows, fptr);
+    return allMembers;
+}
 
 void MI_registerMember() {
     MI_Member newMember;
@@ -312,162 +350,6 @@ int MI_verifyLogin(char inputID[11], char inputPass[11]) {
     return 1;
 }
 
-void MI_deleteAccount(char* memberID) {
-    char MI_deleteDecision;
-    int numOfMembers = MI_getNumberOfMembers();
-    MI_Member* allMembers = MI_getMemberDetails(numOfMembers);
-
-    printf("Are you sure you want to delete account? (Y/N): ");
-    MI_deleteDecision = getchar();
-    rewind(stdin);
-
-    if (toupper(MI_deleteDecision) == 'Y') {
-        // Update the binary file
-        FILE* fptrBin = fopen("member-details.bin", "wb");
-        if (!fptrBin) {
-            printf("File cannot be opened.");
-            exit(-1);
-        }
-        for (int i = 0; i < numOfMembers; i++)
-        {
-
-            if (strcmp(allMembers[i].memberID, memberID) != 0) {
-                fwrite(&allMembers[i], sizeof(MI_Member), 1, fptrBin);
-            }
-            else {
-                printf("\n\nAccount Deleted.\n");
-                
-            }
-
-        }
-        fclose(fptrBin);
-    }
-    free(allMembers);
-    system("pause");
-    system("cls");
-    MI_mainMenu();
-}
-
-int MI_getNumberOfMembers() {
-    int rows;
-    FILE* fptr = fopen("member-details.bin", "rb");
-    if (fptr == NULL) {
-        printf("\nError opening file.");
-        exit(-1);
-    }
-
-    // Get the number of members in the file
-    fseek(fptr, 0, SEEK_END);
-    long fileSize = ftell(fptr);
-    rewind(fptr);
-    rows = fileSize / sizeof(MI_Member);
-    fclose(fptr);
-    return rows;
-};
-
-MI_Member* MI_getMemberDetails(int rows) {
-    FILE* fptr = fopen("member-details.bin", "rb");
-    if (fptr == NULL) {
-        printf("\nError opening file.");
-        return NULL;
-    }
-
-    // Allocate memory for member details
-    MI_Member* allMembers = (MI_Member*)malloc((rows) * sizeof(MI_Member));
-    if (allMembers == NULL) {
-        printf("\nMemory allocation failed.");
-        fclose(fptr);
-        return NULL;
-    }
-
-    // Read member details from the binary file
-    fread(allMembers, sizeof(MI_Member), rows, fptr);
-    return allMembers;
-}
-
-void MI_drawTrain() {
-    int MI_position = 0;
-    int MI_maxPosition = 35;
-    for (int i = 0; i < MI_maxPosition; i++) {
-        system("cls");
-        MI_shiftSpace(MI_position);
-        printf("     _________________________________   _____________\n");
-        MI_shiftSpace(MI_position);
-        printf("    / _|_   _|_ \\ / _|_   _|_ \\ / _|_ \\ / / \\ / \\  __()\n");
-        MI_shiftSpace(MI_position);
-        printf("   | |   | |   | | |   | |   | | |   | |  \\_/ \\_/ |  \n");
-        MI_shiftSpace(MI_position);
-        printf("   | |   | |   | | |   | |   | | |   | | | _ _ _ ||\n");
-        MI_shiftSpace(MI_position);
-        printf("   | |_ _| |_ _| | |_ _| |_ _| | |_ _| | |/_\\_/_\\||___\n");
-        MI_shiftSpace(MI_position);
-        printf("    \\__|_____|__/_\\__|_____|__/_\\__|__/_\\____________/\n");
-        MI_shiftSpace(MI_position);
-        printf(" -=@=@==@=@==@==@==@==@==@==@==@==@==@==@==@==@==@==@=-\n");
-        MI_shiftSpace(MI_position);
-        printf(" -=@=@==@=@==@==@==@==@==@==@==@==@==@==@==@==@==@==@=-\n");
-        MI_position = (MI_position + 1) % MI_maxPosition;
-        Sleep(20);
-    }
-    printf("\n\n\n");
-}
-
-Date MI_getDate() {
-    Date MI_currentDate;
-
-    SYSTEMTIME t;
-    GetLocalTime(&t);
-
-    MI_currentDate.day = t.wDay;
-    MI_currentDate.month = t.wMonth;
-    MI_currentDate.year = t.wYear;
-
-    return MI_currentDate;
-}
-
-void MI_shiftSpace(int MI_position) {
-    for (int i = 0; i < MI_position; i++) {
-        printf(" ");
-    }
-}
-
-void MI_displayDetails(char* memberID) {
-    int numOfMembers = MI_getNumberOfMembers();
-    if (numOfMembers == -1) {
-        printf("Failed to get number of members.\n");
-        return;
-    }
-
-    MI_Member* allMembers = MI_getMemberDetails(numOfMembers);
-    if (allMembers == NULL) {
-        printf("Failed to get member details.\n");
-        return;
-    }
-
-    MI_displayDetailsProcess(allMembers, numOfMembers, memberID);
-
-    // Free dynamically allocated memory
-    free(allMembers);
-}
-
-void MI_displayDetailsProcess(MI_Member* allMembers, int rows, char* memberID) {
-    
-
-    for (int i = 0; i < rows; i++) {
-        if (strcmp(allMembers[i].memberID, memberID) == 0) {
-            printf("Member ID: %s\n", allMembers[i].memberID);
-            printf("Password: %s\n", allMembers[i].memberPass);
-            printf("Member Name: %s\n", allMembers[i].memberName);
-            printf("Phone Number: %s\n", allMembers[i].memberPhoneNo);
-            printf("Joined Date: %02d-%02d-%-04d\n", allMembers[i].memberJoinDate.day, 
-                allMembers[i].memberJoinDate.month, allMembers[i].memberJoinDate.year);
-            printf("Member Points: %d\n", allMembers[i].memberRewards);
-            printf("Member Wallet: %.2lf\n\n\n", allMembers[i].memberWallet);
-            
-        }
-    }
-}
-
 void MI_topUpWallet(char* memberID) {
     double tempWallet;
     int numOfMembers = MI_getNumberOfMembers();
@@ -494,7 +376,7 @@ void MI_topUpWallet(char* memberID) {
             newDetails.memberRewards = allMembers[i].memberRewards;
             newDetails.memberWallet = tempWallet;
         }
-        
+
     }
     // Update the binary file
     FILE* fptrBin = fopen("member-details.bin", "wb");
@@ -595,6 +477,79 @@ void MI_memberEditDetails(char* memberID) {
     free(allMembers);
 };
 
+void MI_deleteAccount(char* memberID) {
+    char MI_deleteDecision;
+    int numOfMembers = MI_getNumberOfMembers();
+    MI_Member* allMembers = MI_getMemberDetails(numOfMembers);
+
+    printf("Are you sure you want to delete account? (Y/N): ");
+    MI_deleteDecision = getchar();
+    rewind(stdin);
+
+    if (toupper(MI_deleteDecision) == 'Y') {
+        // Update the binary file
+        FILE* fptrBin = fopen("member-details.bin", "wb");
+        if (!fptrBin) {
+            printf("File cannot be opened.");
+            exit(-1);
+        }
+        for (int i = 0; i < numOfMembers; i++)
+        {
+
+            if (strcmp(allMembers[i].memberID, memberID) != 0) {
+                fwrite(&allMembers[i], sizeof(MI_Member), 1, fptrBin);
+            }
+            else {
+                printf("\n\nAccount Deleted.\n");
+                
+            }
+
+        }
+        fclose(fptrBin);
+    }
+    free(allMembers);
+    system("pause");
+    system("cls");
+    MI_mainMenu();
+}
+
+void MI_displayDetails(char* memberID) {
+    int numOfMembers = MI_getNumberOfMembers();
+    if (numOfMembers == -1) {
+        printf("Failed to get number of members.\n");
+        return;
+    }
+
+    MI_Member* allMembers = MI_getMemberDetails(numOfMembers);
+    if (allMembers == NULL) {
+        printf("Failed to get member details.\n");
+        return;
+    }
+
+    MI_displayDetailsProcess(allMembers, numOfMembers, memberID);
+
+    // Free dynamically allocated memory
+    free(allMembers);
+}
+
+void MI_displayDetailsProcess(MI_Member* allMembers, int rows, char* memberID) {
+    
+
+    for (int i = 0; i < rows; i++) {
+        if (strcmp(allMembers[i].memberID, memberID) == 0) {
+            printf("Member ID: %s\n", allMembers[i].memberID);
+            printf("Password: %s\n", allMembers[i].memberPass);
+            printf("Member Name: %s\n", allMembers[i].memberName);
+            printf("Phone Number: %s\n", allMembers[i].memberPhoneNo);
+            printf("Joined Date: %02d-%02d-%-04d\n", allMembers[i].memberJoinDate.day, 
+                allMembers[i].memberJoinDate.month, allMembers[i].memberJoinDate.year);
+            printf("Member Points: %d\n", allMembers[i].memberRewards);
+            printf("Member Wallet: %.2lf\n\n\n", allMembers[i].memberWallet);
+            
+        }
+    }
+}
+
 void TS_showSchedule() {
     TrainSchedule train;
 
@@ -613,6 +568,51 @@ void TS_showSchedule() {
     fclose(fptr);
 }
 
+void MI_drawTrain() {
+    int MI_position = 0;
+    int MI_maxPosition = 35;
+    for (int i = 0; i < MI_maxPosition; i++) {
+        system("cls");
+        MI_shiftSpace(MI_position);
+        printf("     _________________________________   _____________\n");
+        MI_shiftSpace(MI_position);
+        printf("    / _|_   _|_ \\ / _|_   _|_ \\ / _|_ \\ / / \\ / \\  __()\n");
+        MI_shiftSpace(MI_position);
+        printf("   | |   | |   | | |   | |   | | |   | |  \\_/ \\_/ |  \n");
+        MI_shiftSpace(MI_position);
+        printf("   | |   | |   | | |   | |   | | |   | | | _ _ _ ||\n");
+        MI_shiftSpace(MI_position);
+        printf("   | |_ _| |_ _| | |_ _| |_ _| | |_ _| | |/_\\_/_\\||___\n");
+        MI_shiftSpace(MI_position);
+        printf("    \\__|_____|__/_\\__|_____|__/_\\__|__/_\\____________/\n");
+        MI_shiftSpace(MI_position);
+        printf(" -=@=@==@=@==@==@==@==@==@==@==@==@==@==@==@==@==@==@=-\n");
+        MI_shiftSpace(MI_position);
+        printf(" -=@=@==@=@==@==@==@==@==@==@==@==@==@==@==@==@==@==@=-\n");
+        MI_position = (MI_position + 1) % MI_maxPosition;
+        Sleep(20);
+    }
+    printf("\n\n\n");
+}
+
+Date MI_getDate() {
+    Date MI_currentDate;
+
+    SYSTEMTIME t;
+    GetLocalTime(&t);
+
+    MI_currentDate.day = t.wDay;
+    MI_currentDate.month = t.wMonth;
+    MI_currentDate.year = t.wYear;
+
+    return MI_currentDate;
+}
+
+void MI_shiftSpace(int MI_position) {
+    for (int i = 0; i < MI_position; i++) {
+        printf(" ");
+    }
+}
 
 /*for admin use*/ void MI_displayAllMembers() {
     
@@ -798,94 +798,6 @@ void TS_showSchedule() {
     // Free dynamically allocated memory
     free(allMembers);
 }
-/*for admin use*/ void MI_addMemberViaTxt() {
-    char fileName[100];
-
-    system("cls");
-    printf("Enter File Name: ");
-    scanf("%s", &fileName);
-    rewind(stdin);
-
-    int numOfMembers = MI_getNumberOfMembers();
-    MI_Member* allMembers = MI_getMemberDetails(numOfMembers);
-
-    int numOfNewMembers = MI_getNumberOfNewMembers(fileName);
-    MI_Member* newMembers = MI_getNewMemberDetails(fileName, numOfNewMembers);
-
-    FILE* fptr2 = fopen("member-details.bin", "ab");
-    if (fptr2 == NULL) {
-        printf("\nError opening file.");
-        system("pause");
-        exit(-1);
-    }
-
-    for (int o = 0; o < numOfNewMembers; o++) {
-        int verify = MI_verifyRegister(newMembers[o].memberID);
-        if (verify == 1) {
-            printf("Member with member ID \"%s\" already existed.\n\n", newMembers[o].memberID);
-        }
-        else {
-            fwrite(&newMembers[o], sizeof(MI_Member), 1, fptr2);
-            printf("Member %s has been registered successfully!\n\n", newMembers[o].memberName);
-        }
-    };
-    fclose(fptr2);
-    free(newMembers);
-    free(allMembers);
-};
-/*for admin use*/ int MI_getNumberOfNewMembers(char* fileName) {
-    FILE* fptr = fopen(fileName, "r");
-    if (fptr == NULL) {
-        printf("\nError opening file.");
-        return -1; // Return -1 to indicate an error
-    }
-
-    // Count the rows of data in the file
-    int row = 0;
-    char buffer[MAX_LINE_LENGTH];
-    while (fgets(buffer, sizeof(buffer), fptr) != NULL) {
-        row++;
-    }
-    rewind(fptr);
-    fclose(fptr); // Close the file before returning
-    return row;
-}
-/*for admin use*/ MI_Member* MI_getNewMemberDetails(char* fileName, int rowsOfNewMembers) {
-    FILE* fptr = fopen(fileName, "r");
-    if (fptr == NULL) {
-        printf("\nError opening file.");
-        return NULL;
-    }
-
-    // Allocate memory for the array of structures based on the number of lines
-    MI_Member* newMembers = (MI_Member*)malloc(rowsOfNewMembers * sizeof(MI_Member));
-    if (newMembers == NULL) {
-        perror("Memory allocation failed");
-        fclose(fptr);
-        return NULL;
-    }
-
-    for (int i = 0; i < rowsOfNewMembers; i++) {
-        if (fscanf(fptr, "%[^|]|%[^|]|%[^|]|%[^|]|%d %d %d|%d|%lf\n",
-            &newMembers[i].memberID, &newMembers[i].memberPass,
-            &newMembers[i].memberName, &newMembers[i].memberPhoneNo,
-            &newMembers[i].memberJoinDate.day, &newMembers[i].memberJoinDate.month, &newMembers[i].memberJoinDate.year,
-            &newMembers[i].memberRewards, &newMembers[i].memberWallet) != 9)
-        {
-            fprintf(stderr, "Error reading line %d\n", i + 1);
-            fclose(fptr);
-            free(newMembers);
-            return NULL;
-        }
-        //// Debug print to check if data is read correctly
-        //printf("Read member %d: %s %s %s %s %s\n", i + 1, allMembers[i].memberID,
-        //    allMembers[i].memberPass, allMembers[i].memberName,
-        //    allMembers[i].memberPhoneNo, allMembers[i].memberJoinDate);
-    }
-
-    fclose(fptr);
-    return newMembers;
-}
 /*for admin use*/ void MI_staffEditMemberDetails() {
     char tempID[11];
     int numOfMembers = MI_getNumberOfMembers();
@@ -1004,4 +916,93 @@ void TS_showSchedule() {
 
 
 };
+/*for admin use*/ void MI_addMemberViaTxt() {
+    char fileName[100];
+
+    system("cls");
+    printf("Enter File Name: ");
+    scanf("%s", &fileName);
+    rewind(stdin);
+
+    int numOfMembers = MI_getNumberOfMembers();
+    MI_Member* allMembers = MI_getMemberDetails(numOfMembers);
+
+    int numOfNewMembers = MI_getNumberOfNewMembersViaTxt(fileName);
+    MI_Member* newMembers = MI_getNewMemberDetailsViaTxt(fileName, numOfNewMembers);
+
+    FILE* fptr2 = fopen("member-details.bin", "ab");
+    if (fptr2 == NULL) {
+        printf("\nError opening file.");
+        system("pause");
+        exit(-1);
+    }
+
+    for (int o = 0; o < numOfNewMembers; o++) {
+        int verify = MI_verifyRegister(newMembers[o].memberID);
+        if (verify == 1) {
+            printf("Member with member ID \"%s\" already existed.\n\n", newMembers[o].memberID);
+        }
+        else {
+            fwrite(&newMembers[o], sizeof(MI_Member), 1, fptr2);
+            printf("Member %s has been registered successfully!\n\n", newMembers[o].memberName);
+        }
+    };
+    fclose(fptr2);
+    free(newMembers);
+    free(allMembers);
+};
+/*for admin use*/ int MI_getNumberOfNewMembersViaTxt(char* fileName) {
+    FILE* fptr = fopen(fileName, "r");
+    if (fptr == NULL) {
+        printf("\nError opening file.");
+        return -1; // Return -1 to indicate an error
+    }
+
+    // Count the rows of data in the file
+    int row = 0;
+    char buffer[MAX_LINE_LENGTH];
+    while (fgets(buffer, sizeof(buffer), fptr) != NULL) {
+        row++;
+    }
+    rewind(fptr);
+    fclose(fptr); // Close the file before returning
+    return row;
+}
+/*for admin use*/ MI_Member* MI_getNewMemberDetailsViaTxt(char* fileName, int rowsOfNewMembers) {
+    FILE* fptr = fopen(fileName, "r");
+    if (fptr == NULL) {
+        printf("\nError opening file.");
+        return NULL;
+    }
+
+    // Allocate memory for the array of structures based on the number of lines
+    MI_Member* newMembers = (MI_Member*)malloc(rowsOfNewMembers * sizeof(MI_Member));
+    if (newMembers == NULL) {
+        perror("Memory allocation failed");
+        fclose(fptr);
+        return NULL;
+    }
+
+    for (int i = 0; i < rowsOfNewMembers; i++) {
+        if (fscanf(fptr, "%[^|]|%[^|]|%[^|]|%[^|]|%d %d %d|%d|%lf\n",
+            &newMembers[i].memberID, &newMembers[i].memberPass,
+            &newMembers[i].memberName, &newMembers[i].memberPhoneNo,
+            &newMembers[i].memberJoinDate.day, &newMembers[i].memberJoinDate.month, &newMembers[i].memberJoinDate.year,
+            &newMembers[i].memberRewards, &newMembers[i].memberWallet) != 9)
+        {
+            fprintf(stderr, "Error reading line %d\n", i + 1);
+            fclose(fptr);
+            free(newMembers);
+            return NULL;
+        }
+        //// Debug print to check if data is read correctly
+        //printf("Read member %d: %s %s %s %s %s\n", i + 1, allMembers[i].memberID,
+        //    allMembers[i].memberPass, allMembers[i].memberName,
+        //    allMembers[i].memberPhoneNo, allMembers[i].memberJoinDate);
+    }
+
+    fclose(fptr);
+    return newMembers;
+}
+
 
