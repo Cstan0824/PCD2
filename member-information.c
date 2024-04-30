@@ -47,6 +47,7 @@ void MI_shiftSpace(int MI_position);
 void MI_drawTrain();
 int MI_getNumberOfMembers();
 MI_Member* MI_getMemberDetails(int rows);
+char* getPassword();
 int MI_verifyRegister(char memberID[11]);
 void MI_registerMember();
 void MI_mainMenu();
@@ -59,36 +60,84 @@ void MI_topUpWallet(char* memberID);
 void MI_memberEditDetails(char* memberID);
 void MI_deleteAccount(char* memberID);
 void TS_showSchedule();
+int G_ContinueOrStopCRUDRecord(char* CRUD);
+void G_ErrorMessage();
 /*for admin use*/ void MI_displayAllMembers();
 /*for admin use*/ void MI_staffSearchMember();
+/*for admin use*/ void MI_displaySearchedMembers(char* memberID);
 /*for admin use*/ void MI_staffDeleteMember();
 /*for admin use*/ void MI_staffEditMemberDetails();
-/*for admin use*/ void MI_addMemberViaTxt();
+/*for admin use*/ void MI_staffAddMemberViaTxt();
+/*for admin use*/ void MI_staffAddMember();
 /*for admin use*/ int MI_getNumberOfNewMembersViaTxt(char* fileName);
 /*for admin use*/ MI_Member* MI_getNewMemberDetailsViaTxt(char* fileName, int rowsOfNewMembers);
+/*for admin use*/ void MI_displayMembersHeaderOrFooter(char HeaderOrFooter);
 
 
 // Main function
 int main() {
     
-   MI_mainMenu();
+    MI_mainMenu();
    return 0;
 }
 
+//Global Functions
+
+int G_ContinueOrStopCRUDRecord(char* CRUD) {
+    //printf("AuditLog : int G_ContinueOrStopCRUDRecord(char * CRUD)\n");
+    char continueCRUDRecord;
+    do
+    {
+        printf("%s", CRUD);
+        scanf("%c", &continueCRUDRecord);
+        rewind(stdin);
+        continueCRUDRecord = toupper(continueCRUDRecord);
+    } while (!(continueCRUDRecord == 'Y' || continueCRUDRecord == 'N'));
+    return continueCRUDRecord == 'Y';
+}
+void G_ErrorMessage() {
+
+    printf("\n\nInvalid input. Please type again.\n\n");
+    system("pause");
+};
+char* G_GetDecision() {
+    char tempDecision[3];
+    scanf("%s", &tempDecision);
+    rewind(stdin);
+    return tempDecision;
+};
+void G_MenuValidation(char decision[3], int range) {};
+
+
 // Functions
 void MI_mainMenu() {
-    system("cls");
-
+    int validation = 0;
     int MI_menuDecision;
-    printf("Welcome to Train Ticketing System\n\n");
-    printf("Choose your mode: \n");
-    printf("1. Member Login\n");
-    printf("2. Member Register\n");
-    printf("3. Exit Program\n\n\n");
+    do {
+        system("cls");
 
-    printf("Mode: ");
-    scanf("%d", &MI_menuDecision);
-    rewind(stdin);
+        char tempDecision[3];
+        printf("Welcome to Train Ticketing System\n\n");
+        printf("Choose your mode: \n");
+        printf("1. Member Login\n");
+        printf("2. Member Register\n");
+        printf("3. Exit Program\n\n\n");
+
+        printf("Mode: ");
+        scanf("%s", &tempDecision);
+        rewind(stdin);
+        
+        if (strcmp(tempDecision, "1") != 0 && strcmp(tempDecision, "2") != 0 && strcmp(tempDecision, "3") != 0) {
+            G_ErrorMessage();
+            validation = 1;
+        }
+        else {
+            MI_menuDecision = atoi(tempDecision);
+            validation = 0;
+        }
+
+    } while (validation != 0);
+
 
     switch (MI_menuDecision) {
     case 1:
@@ -198,6 +247,7 @@ void MI_registerMember() {
 
     system("cls");
     do {
+        system("cls");
         printf("Please enter a new Member ID (7-10 characters): ");
         scanf("%s", &newMember.memberID);
         rewind(stdin);
@@ -209,31 +259,25 @@ void MI_registerMember() {
         }
     } while (verify == 1);
 
-    printf("\nPlease enter a password (7-10 characters): ");
-    int i = 0;
-    
+    verify = 0;
+
     do {
-        char c = _getch();
-        if (c == '\r') { // Enter key
-            break;
-        }
-        if (c == '\b') {
-            if (i > 0) {
-                i--;
-                printf("\b \b"); // Move cursor back, print space, move cursor back again
-            }
+        system("cls");
+        printf("\nPlease enter a password (7-10 characters): ");
+
+        char* tempPass = getPassword();
+
+        printf("\nPlease re-enter to confirm password: ");
+        char* confirmPass = getPassword();
+
+        verify = strcmp(tempPass, confirmPass);
+        if (verify != 0) {
+            printf("\n\nIncorrect password. Please enter again\n\n");
         }
         else {
-            if (i < 10) { // Limiting the password length to 10 characters
-                newMember.memberPass[i++] = c;
-                printf("*");
-            }
+            strcpy(newMember.memberPass, confirmPass);
         }
-    } while (1);
-
-    
-    newMember.memberPass[i] = '\0'; // Null-terminate the password string
-    rewind(stdin);
+    } while (verify != 0);
 
     printf("\n\nPlease enter your name: ");
     scanf("%[^\n]", &newMember.memberName);
@@ -282,35 +326,14 @@ int MI_verifyRegister(char memberID[11]) {
 }
 
 void MI_memberLogin() {
-    char inputID[11], inputPass[11];
+    char inputID[11];
     int verify;
 
     printf("Please enter your Member ID (7-10 characters): ");
     scanf("%s", &inputID);
     rewind(stdin);
     printf("\n\nPlease enter your password (7-10 characters): ");
-    int i = 0;
-    do {
-        char c = _getch();
-        if (c == '\r') { // Enter key
-            break;
-        }
-        if (c == '\b') {
-            if (i > 0) {
-                i--;
-                printf("\b \b"); // Move cursor back, print space, move cursor back again
-            }
-        }
-        else {
-            if (i < 10) { // Limiting the password length to 10 characters
-                inputPass[i++] = c;
-                printf("*");
-            }
-        }
-    } while (1);
-    inputPass[i] = '\0'; // Null-terminate the password string
-
-    
+    char* inputPass = getPassword();
 
     verify = MI_verifyLogin(inputID, inputPass);
     if (verify == 0) {
@@ -415,6 +438,7 @@ void MI_memberEditDetails(char* memberID) {
 
     char decision;
     MI_Member newDetails;
+    int verify;
     for (int i = 0; i < numOfMembers; i++) {
         if (strcmp(memberID, allMembers[i].memberID) == 0) {
             strcpy(newDetails.memberID, memberID);
@@ -422,9 +446,23 @@ void MI_memberEditDetails(char* memberID) {
             scanf("%c", &decision);
             rewind(stdin);
             if (toupper(decision) == 'Y') {
-                printf("New password (7 to 10 characters): ");
-                scanf("%s", &newDetails.memberPass);
-                rewind(stdin);
+                do {
+                    system("cls");
+                    printf("\nPlease enter a new password (7-10 characters): ");
+
+                    char* tempPass = getPassword();
+
+                    printf("\nPlease re-enter to confirm new password: ");
+                    char* confirmPass = getPassword();
+
+                    verify = strcmp(tempPass, confirmPass);
+                    if (verify != 0) {
+                        printf("\n\nIncorrect password. Please enter again\n\n");
+                    }
+                    else {
+                        strcpy(newDetails.memberPass, confirmPass);
+                    }
+                } while (verify != 0);
             }
             else {
                 strcpy(newDetails.memberPass, allMembers[i].memberPass);
@@ -538,8 +576,13 @@ void MI_displayDetailsProcess(MI_Member* allMembers, int rows, char* memberID) {
     for (int i = 0; i < rows; i++) {
         if (strcmp(allMembers[i].memberID, memberID) == 0) {
             printf("Member ID: %s\n", allMembers[i].memberID);
-            printf("Password: %s\n", allMembers[i].memberPass);
-            printf("Member Name: %s\n", allMembers[i].memberName);
+            printf("Password: ");
+            for (int p = 0; p < strlen(allMembers[i].memberPass); p++) {
+
+                printf("*");
+
+            }
+            printf("\nMember Name: %s\n", allMembers[i].memberName);
             printf("Phone Number: %s\n", allMembers[i].memberPhoneNo);
             printf("Joined Date: %02d-%02d-%-04d\n", allMembers[i].memberJoinDate.day, 
                 allMembers[i].memberJoinDate.month, allMembers[i].memberJoinDate.year);
@@ -614,342 +657,513 @@ void MI_shiftSpace(int MI_position) {
     }
 }
 
+char* getPassword() {
+    int i = 0;
+    char tempPass[11];
+    do {
+        char c = _getch();
+        if (c == '\r') { // Enter key
+            break;
+        }
+        if (c == '\b') {
+            if (i > 0) {
+                i--;
+                printf("\b \b"); // Move cursor back, print space, move cursor back again
+            }
+        }
+        else {
+            if (i < 10) { // Limiting the password length to 10 characters
+                tempPass[i++] = c;
+                printf("*");
+            }
+        }
+    } while (1);
+    tempPass[i] = '\0'; // Null-terminate the password string
+    rewind(stdin);
+    return tempPass;
+}
+
 /*for admin use*/ void MI_displayAllMembers() {
     
     int numOfMembers = MI_getNumberOfMembers();
     MI_Member* allMembers = MI_getMemberDetails(numOfMembers);
-    printf("%-15s %-15s %-50s %-15s %-15s %-15s %-20s\n", "Member ID", "Password", "Name", "Phone Number", "Join Date", "Reward Points", "Wallet");
+    MI_displayMembersHeaderOrFooter('H');
     for (int i = 0; i < numOfMembers; i++) {
-        printf("%-15s %-15s %-50s %-15s %02d-%02d-%-09d %-15d %-12.2lf\n", allMembers[i].memberID, allMembers[i].memberPass,
+        // Create a new string with asterisks for the password
+        int passLength = strlen(allMembers[i].memberPass);
+        char* asteriskPassword = (char*)malloc((passLength + 1) * sizeof(char)); // +1 for null terminator
+        if (asteriskPassword == NULL) {
+            // Handle memory allocation failure
+            printf("Memory allocation failed.\n");
+            break;
+        }
+        for (int j = 0; j < passLength; j++) {
+            asteriskPassword[j] = '*';
+        }
+        asteriskPassword[passLength] = '\0'; // Null-terminate the string
+
+        printf("| %-13s | %-13s | %-50s | %-13s | %02d-%02d-%-05d | %-13d | %-12.2lf|\n", allMembers[i].memberID, asteriskPassword,
             allMembers[i].memberName, allMembers[i].memberPhoneNo,
             allMembers[i].memberJoinDate.day, allMembers[i].memberJoinDate.month, allMembers[i].memberJoinDate.year, allMembers[i].memberRewards,
             allMembers[i].memberWallet);
+        MI_displayMembersHeaderOrFooter('F');
+
+        // Free dynamically allocated memory for the password
+        free(asteriskPassword);
     }
     free(allMembers);
 
 };
-/*for admin use*/ void MI_staffSearchMember() {
-    int MI_searchYear, MI_searchMonth, MI_searchDay;
-    char MI_searchID[11];
+/*for admin use*/ void MI_displayMembersHeaderOrFooter(char HeaderOrFooter) {
+
+    if (HeaderOrFooter == 'H') {
+        for (int i = 0; i < 146; i++) {
+            printf("=");
+        }
+        printf("\n");
+        printf("%-15s %-15s %-52s %-15s %-13s %-15s %-22s\n", "| Member ID", "| Password", "| Name", "| Phone Number", "| Join Date", "| Reward Points", "| Wallet      |");
+        for (int i = 0; i < 146; i++) {
+            printf("=");
+        }
+        printf("\n");
+    }
+    else if (HeaderOrFooter == 'F') {
+
+        for (int i = 0; i < 146; i++) {
+            printf("-");
+        }
+        printf("\n");
+
+    }
+
+};
+/*for admin use*/ void MI_displaySearchedMembers(char* memberID){
     int numOfMembers = MI_getNumberOfMembers();
     MI_Member* allMembers = MI_getMemberDetails(numOfMembers);
-    system("cls");
-    int MI_menuDecision;
-    printf("Search member through:\n\n");
-    printf("1. Joined year\n");
-    printf("2. Joined month\n");
-    printf("3. Joined day\n");
-    printf("4. Member ID\n");
-    printf("5. Back to menu\n\n\n");
 
-    printf("Mode: ");
-    scanf("%d", &MI_menuDecision);
-    rewind(stdin);
-
-    switch (MI_menuDecision) {
-
-    case 1:
-        //based on year
-        printf("Search member joined on year: ");
-        scanf("%d", &MI_searchYear);
-        rewind(stdin);
-        printf("\n\n");
-        for (int i = 0; i < numOfMembers; i++) {
-            // Extract the year part from the member's join date and compare with the desired year
-            int year = allMembers[i].memberJoinDate.year;
-
-            if (year == MI_searchYear) {
-                // Print the member's details if they joined in the desired year
-                printf("%-15s %-15s %-50s %-15s %-15s %-15s %-20s\n", "Member ID", "Password", "Name", "Phone Number", "Join Date",
-                    "Reward Points", "Wallet");
-                printf("%-15s %-15s %-50s %-15s %02d-%02d-%-09d %-15d %-12.2lf\n", allMembers[i].memberID, allMembers[i].memberPass,
-                    allMembers[i].memberName, allMembers[i].memberPhoneNo,
-                    allMembers[i].memberJoinDate.day, allMembers[i].memberJoinDate.month, allMembers[i].memberJoinDate.year, allMembers[i].memberRewards,
-                    allMembers[i].memberWallet);
+    for (int i = 0; i < numOfMembers; i++) {
+        if (strcmp(memberID, allMembers[i].memberID) == 0) {
+            // Create a new string with asterisks for the password
+            int passLength = strlen(allMembers[i].memberPass);
+            char* asteriskPassword = (char*)malloc((passLength + 1) * sizeof(char)); // +1 for null terminator
+            if (asteriskPassword == NULL) {
+                // Handle memory allocation failure
+                printf("Memory allocation failed.\n");
+                break;
             }
-        }
-        break;
-    case 2:
-        //based on month
-        printf("Search member joined on month: ");
-        scanf("%d", &MI_searchMonth);
-        rewind(stdin);
-        printf("\n\n");
-        for (int i = 0; i < numOfMembers; i++) {
-            // Extract the month part from the member's join date and compare with the searched month
-            int month = allMembers[i].memberJoinDate.month;
-
-            if (month == MI_searchMonth) {
-                // Print the member's details if they joined in the searched month
-                printf("%-15s %-15s %-50s %-15s %-15s %-15s %-20s\n", "Member ID", "Password", "Name", "Phone Number", "Join Date",
-                    "Reward Points", "Wallet");
-                printf("%-15s %-15s %-50s %-15s %02d-%02d-%-09d %-15d %-12.2lf\n", allMembers[i].memberID, allMembers[i].memberPass,
-                    allMembers[i].memberName, allMembers[i].memberPhoneNo,
-                    allMembers[i].memberJoinDate.day, allMembers[i].memberJoinDate.month, allMembers[i].memberJoinDate.year, allMembers[i].memberRewards,
-                    allMembers[i].memberWallet);
+            for (int j = 0; j < passLength; j++) {
+                asteriskPassword[j] = '*';
             }
-        }
-        break;
-    case 3:
-        //based on day
-        printf("Search member joined on day: ");
-        scanf("%d", &MI_searchDay);
-        rewind(stdin);
-        printf("\n\n");
-        for (int i = 0; i < numOfMembers; i++) {
-            // Extract the day part from the member's join date and compare with the searched day
-            int day = allMembers[i].memberJoinDate.day;
+            asteriskPassword[passLength] = '\0'; // Null-terminate the string
 
-            if (day == MI_searchDay) {
-                // Print the member's details if they joined in the searched day
-                printf("%-15s %-15s %-50s %-15s %-15s %-15s %-20s\n", "Member ID", "Password", "Name", "Phone Number", "Join Date",
-                    "Reward Points", "Wallet");
-                printf("%-15s %-15s %-50s %-15s %02d-%02d-%-09d %-15d %-12.2lf\n", allMembers[i].memberID, allMembers[i].memberPass,
-                    allMembers[i].memberName, allMembers[i].memberPhoneNo,
-                    allMembers[i].memberJoinDate.day, allMembers[i].memberJoinDate.month, allMembers[i].memberJoinDate.year, allMembers[i].memberRewards,
-                    allMembers[i].memberWallet);
-            }
-        }
-        break;
-    case 4:
-        //based on memberID
-        printf("Search member by member ID: ");
-        scanf("%s", &MI_searchID);
-        rewind(stdin);
-        printf("\n\n");
-        for (int i = 0; i < numOfMembers; i++) {
+            printf("| %-13s | %-13s | %-50s | %-13s | %02d-%02d-%-05d | %-13d | %-12.2lf|\n", allMembers[i].memberID, asteriskPassword,
+                allMembers[i].memberName, allMembers[i].memberPhoneNo,
+                allMembers[i].memberJoinDate.day, allMembers[i].memberJoinDate.month, allMembers[i].memberJoinDate.year, allMembers[i].memberRewards,
+                allMembers[i].memberWallet);
+            MI_displayMembersHeaderOrFooter('F');
 
-            if (strcmp(MI_searchID, allMembers[i].memberID) == 0) {
-                printf("%-15s %-15s %-50s %-15s %-15s %-15s %-20s\n", "Member ID", "Password", "Name", "Phone Number", "Join Date",
-                    "Reward Points", "Wallet");
-                printf("%-15s %-15s %-50s %-15s %02d-%02d-%-09d %-15d %-12.2lf\n", allMembers[i].memberID, allMembers[i].memberPass,
-                    allMembers[i].memberName, allMembers[i].memberPhoneNo,
-                    allMembers[i].memberJoinDate.day, allMembers[i].memberJoinDate.month, allMembers[i].memberJoinDate.year, allMembers[i].memberRewards,
-                    allMembers[i].memberWallet);
-            }
+            // Free dynamically allocated memory for the password
+            free(asteriskPassword);
         }
-        break;
-
-    case 5:
-        free(allMembers);
-        exit(-1);
-        break;
-    default:
-        printf("\nInvalid decision. Redirecting...\n");
-        free(allMembers);
-        MI_staffSearchMember();
     }
     free(allMembers);
+
+
+};
+/*for admin use*/ void MI_staffSearchMember() {
+    int MI_searchYear, MI_searchMonth, MI_searchDay;
+    char MI_searchID[11], MI_searchName[50];
+    int numOfMembers = MI_getNumberOfMembers();
+    MI_Member* allMembers = MI_getMemberDetails(numOfMembers);
+    do {
+        system("cls");
+        int MI_menuDecision;
+        printf("Search member through:\n\n");
+        printf("1. Joined year\n");
+        printf("2. Joined month\n");
+        printf("3. Joined day\n");
+        printf("4. Member ID\n");
+        printf("5. Member Name\n");
+        printf("6. Back to menu\n\n\n");
+
+        printf("Mode: ");
+        scanf("%d", &MI_menuDecision);
+        rewind(stdin);
+
+        switch (MI_menuDecision) {
+
+        case 1:
+            //based on year
+            printf("Search member joined on year: ");
+            scanf("%d", &MI_searchYear);
+            rewind(stdin);
+
+            MI_displayMembersHeaderOrFooter('H');
+            for (int i = 0; i < numOfMembers; i++) {
+                // Extract the year part from the member's join date and compare with the desired year
+                int year = allMembers[i].memberJoinDate.year;
+
+                if (year == MI_searchYear) {
+                    // Print the member's details if they joined in the desired year
+                    MI_displaySearchedMembers(allMembers[i].memberID);
+                }
+            }
+            break;
+        case 2:
+            //based on month
+            printf("Search member joined on month: ");
+            scanf("%d", &MI_searchMonth);
+            rewind(stdin);
+            printf("\n\n");
+            for (int i = 0; i < numOfMembers; i++) {
+                // Extract the month part from the member's join date and compare with the searched month
+                int month = allMembers[i].memberJoinDate.month;
+
+                if (month == MI_searchMonth) {
+                    // Print the member's details if they joined in the searched month
+                    MI_displaySearchedMembers(allMembers[i].memberID);
+                }
+            }
+            break;
+        case 3:
+            //based on day
+            printf("Search member joined on day: ");
+            scanf("%d", &MI_searchDay);
+            rewind(stdin);
+            printf("\n\n");
+            for (int i = 0; i < numOfMembers; i++) {
+                // Extract the day part from the member's join date and compare with the searched day
+                int day = allMembers[i].memberJoinDate.day;
+
+                if (day == MI_searchDay) {
+                    // Print the member's details if they joined in the searched day
+                    MI_displaySearchedMembers(allMembers[i].memberID);
+                }
+            }
+            break;
+        case 4:
+            //based on memberID
+            printf("Search member by member ID: ");
+            scanf("%s", &MI_searchID);
+            rewind(stdin);
+            printf("\n\n");
+            for (int i = 0; i < numOfMembers; i++) {
+
+                if (strcmp(MI_searchID, allMembers[i].memberID) == 0) {
+                    MI_displaySearchedMembers(allMembers[i].memberID);
+                }
+            }
+            break;
+        case 5:
+            //based on member name
+            printf("Search member by member name: ");
+            scanf("%[^\n]", &MI_searchName);
+            rewind(stdin);
+            printf("\n\n");
+            for (int i = 0; i < numOfMembers; i++) {
+
+                if (strstr(allMembers[i].memberName, MI_searchName) != NULL) {
+                    MI_displaySearchedMembers(allMembers[i].memberID);
+                }
+            }
+        case 6:
+            free(allMembers);
+            exit(-1);
+            break;
+        default:
+            printf("\nInvalid decision. Redirecting...\n");
+            free(allMembers);
+            MI_staffSearchMember();
+        }
+    } while (G_ContinueOrStopCRUDRecord("Do you want to continue search for members? (Y/N)") == 1);
+    free(allMembers);
+};
+/*for admin use*/ void MI_staffAddMember() {
+
+    MI_Member newMember;
+    int verify;
+    char tempPass[11], confirmPass[11];
+
+    do {
+        do {
+            system("cls");
+            printf("Please enter a new Member ID (7-10 characters): ");
+            scanf("%s", &newMember.memberID);
+            rewind(stdin);
+            verify = MI_verifyRegister(newMember.memberID);
+
+            if (verify == 1) {
+                printf("\nInvalid member ID. Member ID already exists.\n");
+                return;
+            }
+        } while (verify == 1);
+
+        verify = 0;
+
+        do {
+            system("cls");
+            printf("\nPlease enter a password (7-10 characters): ");
+
+            char* tempPass = getPassword();
+
+            printf("\nPlease re-enter to confirm password: ");
+            char* confirmPass = getPassword();
+
+            verify = strcmp(tempPass, confirmPass);
+            if (verify != 0) {
+                printf("\n\nIncorrect password. Please enter again\n\n");
+            }
+            else {
+                strcpy(newMember.memberPass, confirmPass);
+            }
+        } while (verify != 0);
+
+
+
+        printf("\n\nPlease enter new member's name: ");
+        scanf("%[^\n]", &newMember.memberName);
+        rewind(stdin);
+        printf("\n\nPlease enter new member's phone number: ");
+        scanf("%s", &newMember.memberPhoneNo);
+        rewind(stdin);
+        newMember.memberJoinDate = MI_getDate();
+        printf("\n\nPlease enter new member's reward points: ");
+        scanf("%d", &newMember.memberRewards);
+        rewind(stdin);
+        newMember.memberWallet = 0;
+
+        // Write member details to binary file
+        FILE* fptr = fopen("member-details.bin", "ab");
+        if (fptr == NULL) {
+            printf("\nError opening file.");
+            system("pause");
+            exit(-1);
+        }
+        fwrite(&newMember, sizeof(MI_Member), 1, fptr);
+        fclose(fptr);
+
+        printf("Member %s has been registered successfully!\n\n", newMember.memberName);
+        system("pause");
+        system("cls");
+    } while (G_ContinueOrStopCRUDRecord("Do you want to add more members? (Y/N): ") == 1);
 };
 /*for admin use*/ void MI_staffDeleteMember() {
     char tempID[11];
     char decision;
     int numOfMembers = MI_getNumberOfMembers();
     MI_Member* allMembers = MI_getMemberDetails(numOfMembers);
+    do {
+        MI_displayAllMembers();
+
+        printf("\n\nEnter member ID to cancel membership: ");
+        scanf("%s", tempID);
+        rewind(stdin);
 
 
+        for (int i = 0; i < numOfMembers; i++) {
+            if (strcmp(allMembers[i].memberID, tempID) == 0) {
+                MI_displayDetails(allMembers[i].memberID);
+                printf("\n\n Are you sure you want to delete? (Y/N): ");
+                scanf("%c", &decision);
+                rewind(stdin);
+                if (decision == 'Y' || decision == 'y') {
+                    // Update the binary file
+                    FILE* fptrBin = fopen("member-details.bin", "wb");
+                    if (!fptrBin) {
+                        printf("File cannot be opened.");
+                        exit(-1);
+                    }
+                    for (int i = 0; i < numOfMembers; i++)
+                    {
 
-    printf("Enter member ID to cancel membership: ");
-    scanf("%s", tempID);
-    rewind(stdin);
+                        if (strcmp((allMembers + i)->memberID, tempID) != 0) {
+                            fwrite(&allMembers[i], sizeof(MI_Member), 1, fptrBin);
+                        }
+                        else {
+                            printf("\n\nMember Deleted\n");
+                        }
+
+                    }
+                    fclose(fptrBin);
+                }
+
+            }
+        }
+    } while (G_ContinueOrStopCRUDRecord("Do you want to continue delete more members? (Y/N): ") == 1);
+
+    free(allMembers);
+
+}
+/*for admin use*/ void MI_staffEditMemberDetails() {
+    char tempID[11];
+    int numOfMembers = MI_getNumberOfMembers();
+    MI_Member* allMembers = MI_getMemberDetails(numOfMembers);
+    do{
+        MI_displayAllMembers();
+        printf("Enter member ID to edit details: ");
+        scanf("%s", &tempID);
+        rewind(stdin);
+
+        MI_displayDetails(tempID);
+        char decision;
+        MI_Member newDetails;
+        int verify;
+    
+        for (int i = 0; i < numOfMembers; i++) {
+            if (strcmp(tempID, allMembers[i].memberID) == 0) {
+                strcpy(newDetails.memberID, tempID);
+                printf("\n\n Do you want to edit password? (Y/N): ");
+                scanf("%c", &decision);
+                rewind(stdin);
+                if (toupper(decision) == 'Y') {
+                    do {
+                        system("cls");
+                        printf("\nPlease enter a new password (7-10 characters): ");
+
+                        char* tempPass = getPassword();
+
+                        printf("\nPlease re-enter to confirm new password: ");
+                        char* confirmPass = getPassword();
+
+                        verify = strcmp(tempPass, confirmPass);
+                        if (verify != 0) {
+                            printf("\n\nIncorrect password. Please enter again\n\n");
+                        }
+                        else {
+                            strcpy(newDetails.memberPass, confirmPass);
+                        }
+                    } while (verify != 0);
+                }
+                else {
+                    strcpy(newDetails.memberPass, allMembers[i].memberPass);
+                }
+                printf("\n\n Do you want to edit name? (Y/N): ");
+                scanf("%c", &decision);
+                rewind(stdin);
+                if (toupper(decision) == 'Y') {
+                    printf("New name: ");
+                    scanf("%s", &newDetails.memberName);
+                    rewind(stdin);
+                }
+                else {
+                    strcpy(newDetails.memberName, allMembers[i].memberName);
+                }
+                printf("\n\n Do you want to edit phone number? (Y/N): ");
+                scanf("%c", &decision);
+                rewind(stdin);
+                if (toupper(decision) == 'Y') {
+                    printf("New phone number (XXXXXXXXXX or XXXXXXXXXXX): ");
+                    scanf("%s", &newDetails.memberPhoneNo);
+                    rewind(stdin);
+                }
+                else {
+                    strcpy(newDetails.memberPhoneNo, allMembers[i].memberPhoneNo);
+                }
+                printf("\n\n Do you want to edit Joined Day? (Y/N): ");
+                scanf("%c", &decision);
+                rewind(stdin);
+                if (toupper(decision) == 'Y') {
+                    printf("New joined day: ");
+                    scanf("%d", &newDetails.memberJoinDate.day);
+                    rewind(stdin);
+                }
+                else {
+                    newDetails.memberJoinDate.day = allMembers[i].memberJoinDate.day;
+                }
+                printf("\n\n Do you want to edit Joined Month? (Y/N): ");
+                scanf("%c", &decision);
+                rewind(stdin);
+                if (toupper(decision) == 'Y') {
+                    printf("New joined month: ");
+                    scanf("%d", &newDetails.memberJoinDate.month);
+                    rewind(stdin);
+                }
+                else {
+                    newDetails.memberJoinDate.month = allMembers[i].memberJoinDate.month;
+                }
+                printf("\n\n Do you want to edit Joined Year? (Y/N): ");
+                scanf("%c", &decision);
+                rewind(stdin);
+                if (toupper(decision) == 'Y') {
+                    printf("New joined year: ");
+                    scanf("%d", &newDetails.memberJoinDate.year);
+                    rewind(stdin);
+                }
+                else {
+                    newDetails.memberJoinDate.year = allMembers[i].memberJoinDate.year;
+                }
+                printf("\n\n Do you want to edit Reward Points? (Y/N): ");
+                scanf("%c", &decision);
+                rewind(stdin);
+                if (toupper(decision) == 'Y') {
+                    printf("New reward points: ");
+                    scanf("%d", &newDetails.memberRewards);
+                    rewind(stdin);
+                }
+                else {
+                    newDetails.memberRewards = allMembers[i].memberRewards;
+                }
+
+                newDetails.memberWallet = allMembers[i].memberWallet;
 
 
-    for (int i = 0; i < numOfMembers; i++) {
-        if (strcmp(allMembers[i].memberID, tempID) == 0) {
-            MI_displayDetails(allMembers[i].memberID);
-            printf("\n\n Are you sure you want to delete? (Y/N): ");
-            scanf("%c", &decision);
-            rewind(stdin);
-            if (decision == 'Y' || decision == 'y') {
                 // Update the binary file
                 FILE* fptrBin = fopen("member-details.bin", "wb");
                 if (!fptrBin) {
                     printf("File cannot be opened.");
                     exit(-1);
                 }
-                for (int i = 0; i < numOfMembers; i++)
+                for (int u = 0; u < numOfMembers; u++)
                 {
-
-                    if (strcmp((allMembers + i)->memberID, tempID) != 0) {
-                        fwrite(&allMembers[i], sizeof(MI_Member), 1, fptrBin);
+                    if (strcmp(allMembers[u].memberID, tempID) != 0) {
+                        fwrite(&allMembers[u], sizeof(MI_Member), 1, fptrBin);
                     }
-                    else {
-                        printf("\n\nMember Deleted\n");
-                    }
-
                 }
+                fwrite(&newDetails, sizeof(MI_Member), 1, fptrBin);
+                printf("\n\nDetails updated.\n\n");
                 fclose(fptrBin);
             }
-
-
-
         }
-    }
-
-
-
-
-
-    /*for (int i = 0; i < numOfMembers; i++) {
-        fprintf(fptrTxt, "%s|%s|%s|%s|%d %d %d|%d\n", allMembers[i].memberID, allMembers[i].memberPass, allMembers[i].memberName, allMembers[i].memberPhoneNo, allMembers[i].memberJoinDate.day, allMembers[i].memberJoinDate.month, allMembers[i].memberJoinDate.year, allMembers[i].memberRewards);
-    }
-    */
-
-    // Free dynamically allocated memory
-    free(allMembers);
-}
-/*for admin use*/ void MI_staffEditMemberDetails() {
-    char tempID[11];
-    int numOfMembers = MI_getNumberOfMembers();
-    MI_Member* allMembers = MI_getMemberDetails(numOfMembers);
-
-    MI_displayAllMembers();
-    printf("Enter member ID to edit details: ");
-    scanf("%s", &tempID);
-    rewind(stdin);
-
-    MI_displayDetails(tempID);
-    char decision;
-    MI_Member newDetails;
-    for (int i = 0; i < numOfMembers; i++) {
-        if (strcmp(tempID, allMembers[i].memberID) == 0) {
-            strcpy(newDetails.memberID, tempID);
-            printf("\n\n Do you want to edit password? (Y/N): ");
-            scanf("%c", &decision);
-            rewind(stdin);
-            if (toupper(decision) == 'Y') {
-                printf("New password (7 to 10 characters): ");
-                scanf("%s", &newDetails.memberPass);
-                rewind(stdin);
-            }
-            else {
-                strcpy(newDetails.memberPass, allMembers[i].memberPass);
-            }
-            printf("\n\n Do you want to edit name? (Y/N): ");
-            scanf("%c", &decision);
-            rewind(stdin);
-            if (toupper(decision) == 'Y') {
-                printf("New name: ");
-                scanf("%s", &newDetails.memberName);
-                rewind(stdin);
-            }
-            else {
-                strcpy(newDetails.memberName, allMembers[i].memberName);
-            }
-            printf("\n\n Do you want to edit phone number? (Y/N): ");
-            scanf("%c", &decision);
-            rewind(stdin);
-            if (toupper(decision) == 'Y') {
-                printf("New phone number (XXXXXXXXXX or XXXXXXXXXXX): ");
-                scanf("%s", &newDetails.memberPhoneNo);
-                rewind(stdin);
-            }
-            else {
-                strcpy(newDetails.memberPhoneNo, allMembers[i].memberPhoneNo);
-            }
-            printf("\n\n Do you want to edit Joined Day? (Y/N): ");
-            scanf("%c", &decision);
-            rewind(stdin);
-            if (toupper(decision) == 'Y') {
-                printf("New joined day: ");
-                scanf("%d", &newDetails.memberJoinDate.day);
-                rewind(stdin);
-            }
-            else {
-                newDetails.memberJoinDate.day = allMembers[i].memberJoinDate.day;
-            }
-            printf("\n\n Do you want to edit Joined Month? (Y/N): ");
-            scanf("%c", &decision);
-            rewind(stdin);
-            if (toupper(decision) == 'Y') {
-                printf("New joined month: ");
-                scanf("%d", &newDetails.memberJoinDate.month);
-                rewind(stdin);
-            }
-            else {
-                newDetails.memberJoinDate.month = allMembers[i].memberJoinDate.month;
-            }
-            printf("\n\n Do you want to edit Joined Year? (Y/N): ");
-            scanf("%c", &decision);
-            rewind(stdin);
-            if (toupper(decision) == 'Y') {
-                printf("New joined year: ");
-                scanf("%d", &newDetails.memberJoinDate.year);
-                rewind(stdin);
-            }
-            else {
-                newDetails.memberJoinDate.year = allMembers[i].memberJoinDate.year;
-            }
-            printf("\n\n Do you want to edit Reward Points? (Y/N): ");
-            scanf("%c", &decision);
-            rewind(stdin);
-            if (toupper(decision) == 'Y') {
-                printf("New reward points: ");
-                scanf("%d", &newDetails.memberRewards);
-                rewind(stdin);
-            }
-            else {
-                newDetails.memberRewards = allMembers[i].memberRewards;
-            }
-
-            newDetails.memberWallet = allMembers[i].memberWallet;
-
-
-            // Update the binary file
-            FILE* fptrBin = fopen("member-details.bin", "wb");
-            if (!fptrBin) {
-                printf("File cannot be opened.");
-                exit(-1);
-            }
-            for (int u = 0; u < numOfMembers; u++)
-            {
-                if (strcmp(allMembers[u].memberID, tempID) != 0) {
-                    fwrite(&allMembers[u], sizeof(MI_Member), 1, fptrBin);
-                }
-            }
-            fwrite(&newDetails, sizeof(MI_Member), 1, fptrBin);
-            printf("\n\nDetails updated.\n\n");
-            fclose(fptrBin);
-        }
-    }
+    }while (G_ContinueOrStopCRUDRecord("Do you want to edit more members? (Y/N): ") == 1);
     free(allMembers);
 
 
 };
-/*for admin use*/ void MI_addMemberViaTxt() {
+/*for admin use*/ void MI_staffAddMemberViaTxt() {
     char fileName[100];
+    do {
+        system("cls");
+        printf("Enter File Name: ");
+        scanf("%s", &fileName);
+        rewind(stdin);
 
-    system("cls");
-    printf("Enter File Name: ");
-    scanf("%s", &fileName);
-    rewind(stdin);
+        int numOfMembers = MI_getNumberOfMembers();
+        MI_Member* allMembers = MI_getMemberDetails(numOfMembers);
 
-    int numOfMembers = MI_getNumberOfMembers();
-    MI_Member* allMembers = MI_getMemberDetails(numOfMembers);
+        int numOfNewMembers = MI_getNumberOfNewMembersViaTxt(fileName);
+        MI_Member* newMembers = MI_getNewMemberDetailsViaTxt(fileName, numOfNewMembers);
 
-    int numOfNewMembers = MI_getNumberOfNewMembersViaTxt(fileName);
-    MI_Member* newMembers = MI_getNewMemberDetailsViaTxt(fileName, numOfNewMembers);
-
-    FILE* fptr2 = fopen("member-details.bin", "ab");
-    if (fptr2 == NULL) {
-        printf("\nError opening file.");
-        system("pause");
-        exit(-1);
-    }
-
-    for (int o = 0; o < numOfNewMembers; o++) {
-        int verify = MI_verifyRegister(newMembers[o].memberID);
-        if (verify == 1) {
-            printf("Member with member ID \"%s\" already existed.\n\n", newMembers[o].memberID);
+        FILE* fptr2 = fopen("member-details.bin", "ab");
+        if (fptr2 == NULL) {
+            printf("\nError opening file.");
+            system("pause");
+            exit(-1);
         }
-        else {
-            fwrite(&newMembers[o], sizeof(MI_Member), 1, fptr2);
-            printf("Member %s has been registered successfully!\n\n", newMembers[o].memberName);
-        }
-    };
-    fclose(fptr2);
-    free(newMembers);
-    free(allMembers);
+
+        for (int o = 0; o < numOfNewMembers; o++) {
+            int verify = MI_verifyRegister(newMembers[o].memberID);
+            if (verify == 1) {
+                printf("Member with member ID \"%s\" already existed.\n\n", newMembers[o].memberID);
+            }
+            else {
+                fwrite(&newMembers[o], sizeof(MI_Member), 1, fptr2);
+                printf("Member %s has been registered successfully!\n\n", newMembers[o].memberName);
+            }
+        };
+        fclose(fptr2);
+        free(newMembers);
+        free(allMembers);
+    } while (G_ContinueOrStopCRUDRecord("Do you want to add more members via txt file? (Y/N): "));
 };
 /*for admin use*/ int MI_getNumberOfNewMembersViaTxt(char* fileName) {
     FILE* fptr = fopen(fileName, "r");
@@ -1004,5 +1218,7 @@ void MI_shiftSpace(int MI_position) {
     fclose(fptr);
     return newMembers;
 }
+
+
 
 
