@@ -102,7 +102,7 @@ void G_ErrorMessage() {
     system("pause");
 };
 int G_MenuValidation(char decision[3], int range) {
-    char digit[2] = ""; // Changed to 2 to hold one digit and the null terminator
+    char digit[3] = ""; // Changed to 2 to hold one digit and the null terminator
     for (int i = 1; i <= range; i++) {
         sprintf(digit, "%d", i);
         if (strcmp(decision, digit) != 0) {
@@ -168,7 +168,7 @@ void MI_mainMenu() {
 
 void MI_memberMenu(char* memberID) {
     char tempDecision[3];
-    int MI_menuDecision;
+    int MI_memberMenuDecision;
     int validation = 0;
     do {
         system("cls");
@@ -192,12 +192,12 @@ void MI_memberMenu(char* memberID) {
             validation = 1;
         }
         else {
-            MI_menuDecision = atoi(tempDecision);
+            MI_memberMenuDecision = atoi(tempDecision);
             validation = 0;
         }
     } while (validation != 0);
 
-    switch (MI_menuDecision) {
+    switch (MI_memberMenuDecision) {
     case 1:
         MI_topUpWallet(memberID);
         break;
