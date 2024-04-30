@@ -63,6 +63,7 @@ void TS_showSchedule();
 int G_ContinueOrStopCRUDRecord(char* CRUD);
 void G_ErrorMessage();
 int G_MenuValidation(char decision[3], int range);
+int MI_CheckIDorPASSLength(char idOrPass[11]);
 /*for admin use*/ void MI_displayAllMembers();
 /*for admin use*/ void MI_staffSearchMember();
 /*for admin use*/ void MI_displaySearchedMembers(char* memberID);
@@ -790,25 +791,37 @@ char* getPassword() {
 
 };
 /*for admin use*/ void MI_staffSearchMember() {
-    int MI_searchYear, MI_searchMonth, MI_searchDay;
-    char MI_searchID[11], MI_searchName[50];
+    int MI_searchYear, MI_searchMonth, MI_searchDay, validation = 0;
+    char MI_searchID[11], MI_searchName[50], tempDecision[3];
     int numOfMembers = MI_getNumberOfMembers();
     MI_Member* allMembers = MI_getMemberDetails(numOfMembers);
     do {
-        system("cls");
-        int MI_menuDecision;
-        printf("Search member through:\n\n");
-        printf("1. Joined year\n");
-        printf("2. Joined month\n");
-        printf("3. Joined day\n");
-        printf("4. Member ID\n");
-        printf("5. Member Name\n");
-        printf("6. Back to menu\n\n\n");
-
-        printf("Mode: ");
-        scanf("%d", &MI_menuDecision);
-        rewind(stdin);
-
+        do{
+            system("cls");
+            int MI_menuDecision;
+            printf("Search member through:\n\n");
+            printf("1. Joined year\n");
+            printf("2. Joined month\n");
+            printf("3. Joined day\n");
+            printf("4. Member ID\n");
+            printf("5. Member Name\n");
+            printf("6. Back to menu\n\n\n");
+    
+            printf("Mode: ");
+            scanf("%s", &tempDecision);
+            rewind(stdin);
+            
+            if (G_MenuValidation(tempDecision, 6) != 0) {
+                G_ErrorMessage();
+                validation = 1;
+            }
+            else {
+                MI_menuDecision = atoi(tempDecision);
+                validation = 0;
+            }
+        }while(validation != 0);
+        
+        
         switch (MI_menuDecision) {
 
         case 1:
@@ -1235,6 +1248,7 @@ char* getPassword() {
     return newMembers;
 }
 
+int MI_CheckIDorPASSLength(char idOrPass[11]){};
 
 
 
