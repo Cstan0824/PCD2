@@ -1232,10 +1232,7 @@ char* getPassword() {
             free(newMembers);
             return NULL;
         }
-        //// Debug print to check if data is read correctly
-        //printf("Read member %d: %s %s %s %s %s\n", i + 1, allMembers[i].memberID,
-        //    allMembers[i].memberPass, allMembers[i].memberName,
-        //    allMembers[i].memberPhoneNo, allMembers[i].memberJoinDate);
+    
     }
 
     fclose(fptr);
