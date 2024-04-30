@@ -6,10 +6,6 @@
 #include <conio.h>
 #pragma warning (disable: 4996)
 
-
-
-int isAdmin; 
-char userID[10];
 struct employDate {
 	int days, months, years;
 };
@@ -27,12 +23,12 @@ struct staffInfo {
 void lineDesign();
 
 
-void staffInfo();
-void addStaff();
-void searchStaff();
-void modifyStaff();
-void displayStaff();
-void deleteStaff();
+void SI_staffMenu();
+void SI_addStaff();
+void SI_searchStaff();
+void SI_modifyStaff();
+void SI_displayStaff();
+void SI_deleteStaff();
 
 
 
@@ -44,12 +40,12 @@ void main() {
 
 	struct employDate joinedDate;
 	struct staffInfo staff;
-	staffInfo();
-	addStaff();
-	searchStaff();
-	modifyStaff();
-	displayStaff();
-	deleteStaff();
+	SI_staffMenu();
+	SI_addStaff();
+	SI_searchStaff();
+	SI_modifyStaff();
+	SI_displayStaff();
+	SI_deleteStaff();
 
 
 	system("pause");
@@ -62,7 +58,7 @@ void lineDesign() {
 }
 
 
-void staffInfo() {
+void SI_staffMenu() {
 	int sCode;
 	do {
 		printf("\n\t< Staff Information >\n");
@@ -80,26 +76,26 @@ void staffInfo() {
 		system("cls");
 		switch (sCode) {
 		case 1:
-			addStaff();
+			SI_addStaff();
 			break;
 		case 2:
-			searchStaff();
+			SI_searchStaff();
 			break;
 		case 3:
-			modifyStaff();
+			SI_modifyStaff();
 			break;
 		case 4:
-			displayStaff();
+			SI_displayStaff();
 			break;
 		case 5:
-			deleteStaff();
+			SI_deleteStaff();
 			break;
 		default:
 			printf("  Invalid code.\n");
 		}
 	} while (sCode != 1 || sCode != 2 || sCode != 3 || sCode != 4 || sCode != 5 || sCode != 6);
 }
-void addStaff() {
+void SI_addStaff() {
 	struct staffInfo staff;
 	printf("\n \t< Add Staff >\n");
 	lineDesign();
@@ -131,7 +127,7 @@ void addStaff() {
 	fprintf(fp, "%s|%s|%s|%s|%d/%d/%d|%.2f\n", staff.staffID, staff.name, staff.password, staff.position, staff.joinedDate.days, staff.joinedDate.months, staff.joinedDate.years, staff.salary);
 	fclose(fp);
 }
-void searchStaff() {
+void SI_searchStaff() {
 	struct staffInfo staff[20];
 	char searchStaff[10];
 	int i = 0, r = 0;
@@ -140,7 +136,7 @@ void searchStaff() {
 		printf("  Unable to open file.\n");
 		exit(-1);
 	}
-	while (fscanf(fp, "%[^|]|%[^|]|[^|]|%[^|]|%d/%d/%d|%f\n", staff[r].staffID, staff[r].name, &staff[r].password, staff[r].position, &staff[r].joinedDate.days, &staff[r].joinedDate.months, &staff[r].joinedDate.years, &staff[r].salary) != EOF) {
+	while (fscanf(fp, "%[^|]|%[^|]|%[^|]|%[^|]|%d/%d/%d|%f\n", staff[r].staffID, staff[r].name, &staff[r].password, staff[r].position, &staff[r].joinedDate.days, &staff[r].joinedDate.months, &staff[r].joinedDate.years, &staff[r].salary) != EOF) {
 		r++;
 	}
 	fclose(fp);
@@ -170,7 +166,7 @@ void searchStaff() {
 	}
 
 }
-void modifyStaff() {
+void SI_modifyStaff() {
 	struct staffInfo staff[10];
 	char searchStaff[10];
 	int mCode, i = 0, r = 0;
@@ -180,7 +176,7 @@ void modifyStaff() {
 		printf("  Unable to open file.\n");
 		exit(-1);
 	}
-	while (fscanf(fp, "%[^|]|%[^|]|%[^|]|%[^|]|%d/%d/%d|%f\n", staff[r].staffID, staff[r].name, &staff[r].password, staff[r].position, &staff[r].joinedDate.days, &staff[r].joinedDate.months, &staff[r].joinedDate.years, &staff[r].salary) != EOF) {
+	while (fscanf(fp, "%[^|]|%[^|]|%[^|]|%[^|]|%d/%d/%d|%f\n", staff[r].staffID, staff[r].name, staff[r].password, staff[r].position, &staff[r].joinedDate.days, &staff[r].joinedDate.months, &staff[r].joinedDate.years, &staff[r].salary) != EOF) {
 		r++;
 	}
 	fclose(fp);
@@ -275,7 +271,7 @@ void modifyStaff() {
 	}
 	fclose(fp);
 }
-void displayStaff() {
+void SI_displayStaff() {
 	struct staffInfo staff[20];
 	char searchStaff[10];
 	int i = 0, r = 0;
@@ -298,7 +294,7 @@ void displayStaff() {
 	printf("\n\t< Display Staff >\n");
 	lineDesign();
 	printf("  Enter staff ID: ");
-	scanf("%[^\n]", searchStaff);
+	scanf("%[^\n]", &searchStaff);
 	rewind(stdin);
 
 	for (i = 0; i < r; i++) {
@@ -313,7 +309,7 @@ void displayStaff() {
 		}
 	}
 }
-void deleteStaff() {
+void SI_deleteStaff() {
 	FILE* fp5;
 	fp5 = fopen("staffs.txt", "r");
 	if (fp5 == NULL)
