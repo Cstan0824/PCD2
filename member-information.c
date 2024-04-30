@@ -62,6 +62,7 @@ void MI_deleteAccount(char* memberID);
 void TS_showSchedule();
 int G_ContinueOrStopCRUDRecord(char* CRUD);
 void G_ErrorMessage();
+int G_MenuValidation(char decision[3], int range);
 /*for admin use*/ void MI_displayAllMembers();
 /*for admin use*/ void MI_staffSearchMember();
 /*for admin use*/ void MI_displaySearchedMembers(char* memberID);
@@ -100,13 +101,22 @@ void G_ErrorMessage() {
     printf("\n\nInvalid input. Please type again.\n\n");
     system("pause");
 };
-char* G_GetDecision() {
-    char tempDecision[3];
-    scanf("%s", &tempDecision);
-    rewind(stdin);
-    return tempDecision;
+int G_MenuValidation(char decision[3], int range) {
+    char digit[2] = ""; // Changed to 2 to hold one digit and the null terminator
+    for (int i = 1; i <= range; i++) {
+        sprintf(digit, "%d", i);
+        if (strcmp(decision, digit) != 0) {
+
+            return 1;
+
+        }
+        else {
+            return 0;
+        }
+            
+    }
+
 };
-void G_MenuValidation(char decision[3], int range) {};
 
 
 // Functions
@@ -127,7 +137,7 @@ void MI_mainMenu() {
         scanf("%s", &tempDecision);
         rewind(stdin);
         
-        if (strcmp(tempDecision, "1") != 0 && strcmp(tempDecision, "2") != 0 && strcmp(tempDecision, "3") != 0) {
+        if (G_MenuValidation(tempDecision, 3) != 0) {
             G_ErrorMessage();
             validation = 1;
         }
@@ -157,22 +167,35 @@ void MI_mainMenu() {
 }
 
 void MI_memberMenu(char* memberID) {
+    char tempDecision[3];
     int MI_menuDecision;
-    system("cls");
-    printf("Welcome, %s\n\n\n", memberID);
-    MI_displayDetails(memberID);
-    printf("Choose your mode: \n");
-    printf("1. Top Up Wallet\n");
-    printf("2. Edit Details\n");
-    printf("3. Check Ticket Schedule\n");
-    printf("4. Book Tickets\n");
-    printf("5. Booking Details\n");
-    printf("6. Delete Account\n");
-    printf("7. Exit Program\n\n\n");
+    int validation = 0;
+    do {
+        system("cls");
+        printf("Welcome, %s\n\n\n", memberID);
+        MI_displayDetails(memberID);
+        printf("Choose your mode: \n");
+        printf("1. Top Up Wallet\n");
+        printf("2. Edit Details\n");
+        printf("3. Check Ticket Schedule\n");
+        printf("4. Book Tickets\n");
+        printf("5. Booking Details\n");
+        printf("6. Delete Account\n");
+        printf("7. Exit Program\n\n\n");
 
-    printf("Mode: ");
-    scanf("%d", &MI_menuDecision);
-    rewind(stdin);
+        printf("Mode: ");
+        scanf("%s", &tempDecision);
+        rewind(stdin);
+
+        if (G_MenuValidation(tempDecision, 7) != 0) {
+            G_ErrorMessage();
+            validation = 1;
+        }
+        else {
+            MI_menuDecision = atoi(tempDecision);
+            validation = 0;
+        }
+    } while (validation != 0);
 
     switch (MI_menuDecision) {
     case 1:
