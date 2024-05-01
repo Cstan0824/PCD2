@@ -40,14 +40,15 @@ typedef struct {
     Time arrivalTime;
     int availableSeat;
 } TrainSchedule;
-
+MI_Member loggedInMember;
 // Function Declarations
 Date MI_getDate();
 void MI_shiftSpace(int MI_position);
 void MI_drawTrain();
 int MI_getNumberOfMembers();
 MI_Member* MI_getMemberDetails(int rows);
-char* getPassword();
+void MI_loggedInMemberDetails(char* memberID);
+char* MI_getPassword();
 int MI_verifyRegister(char memberID[11]);
 void MI_registerMember();
 void MI_mainMenu();
@@ -63,7 +64,8 @@ void TS_showSchedule();
 int G_ContinueOrStopCRUDRecord(char* CRUD);
 void G_ErrorMessage();
 int G_MenuValidation(char decision[3], int range);
-int MI_CheckIDorPASSLength(char idOrPass[11]);
+int MI_InputDetailsValidation(char* value, char* mode);
+void MI_ErrorMessageForInput(int min, int max);
 /*for admin use*/ void MI_displayAllMembers();
 /*for admin use*/ void MI_staffSearchMember();
 /*for admin use*/ void MI_displaySearchedMembers(char* memberID);
@@ -78,9 +80,9 @@ int MI_CheckIDorPASSLength(char idOrPass[11]);
 
 // Main function
 int main() {
-    
+
     MI_mainMenu();
-   return 0;
+    return 0;
 }
 
 //Global Functions
@@ -133,7 +135,7 @@ void MI_mainMenu() {
         printf("Mode: ");
         scanf("%s", &tempDecision);
         rewind(stdin);
-        
+
         if (G_MenuValidation(tempDecision, 3) != 0) {
             G_ErrorMessage();
             validation = 1;
@@ -205,8 +207,8 @@ void MI_memberMenu(char* memberID) {
         TS_showSchedule();
         break;
     case 4:
-       /* TB_BookingTicket();*/
-        break; 
+        /* TB_BookingTicket();*/
+        break;
     case 5:
         /*TB_GetBookingDetails();*/
         break;
@@ -261,16 +263,33 @@ MI_Member* MI_getMemberDetails(int rows) {
     return allMembers;
 }
 
+void MI_loggedInMemberDetails(char* memberID) {
+    
+    int numOfMembers = MI_getNumberOfMembers();
+    MI_Member* allMembers = MI_getMemberDetails(numOfMembers);
+    for (int i = 0; i < numOfMembers; i++) {
+        if (strcmp(allMembers[i].memberID, memberID) == 0) {
+
+            allMembers[i] = loggedInMember;
+
+        }
+
+    }
+};
+
 void MI_registerMember() {
     MI_Member newMember;
     int verify;
+    int validation = 0;
+    char* tempPass;
 
-    system("cls");
     do {
-        system("cls");
-        printf("Please enter a new Member ID (7-10 characters): ");
-        scanf("%s", &newMember.memberID);
-        rewind(stdin);
+        do {
+            system("cls");
+            printf("Please enter a new Member ID (at least 7, maximum 10 characters): ");
+            scanf("%s", &newMember.memberID);
+            rewind(stdin);
+        } while (MI_InputDetailsValidation(newMember.memberID,"idOrPass") != 0);
         verify = MI_verifyRegister(newMember.memberID);
 
         if (verify == 1) {
@@ -282,13 +301,16 @@ void MI_registerMember() {
     verify = 0;
 
     do {
-        system("cls");
-        printf("\nPlease enter a password (7-10 characters): ");
+        do {
+            system("cls");
+            printf("\nPlease enter a password (at least 7, maximum 10 characters): ");
 
-        char* tempPass = getPassword();
+            char* tempPass = MI_getPassword();
+            validation = MI_InputDetailsValidation(tempPass, "idOrPass");
+        } while (validation != 0);
 
         printf("\nPlease re-enter to confirm password: ");
-        char* confirmPass = getPassword();
+        char* confirmPass = MI_getPassword();
 
         verify = strcmp(tempPass, confirmPass);
         if (verify != 0) {
@@ -299,12 +321,18 @@ void MI_registerMember() {
         }
     } while (verify != 0);
 
-    printf("\n\nPlease enter your name: ");
-    scanf("%[^\n]", &newMember.memberName);
-    rewind(stdin);
-    printf("\n\nPlease enter your phone number: ");
-    scanf("%s", &newMember.memberPhoneNo);
-    rewind(stdin);
+    do {
+        printf("\n\nPlease enter your name: ");
+        scanf("%[^\n]", &newMember.memberName);
+        rewind(stdin);
+    } while (MI_InputDetailsValidation(newMember.memberName, "name") == 1);
+
+    do {
+        printf("\n\nPlease enter your phone number (01XXXXXXXX or 01XXXXXXXXX): ");
+        scanf("%s", &newMember.memberPhoneNo);
+        rewind(stdin);
+    } while (MI_InputDetailsValidation(newMember.memberPhoneNo, "phoneNo") == 1);
+
     printf("\n\n");
     newMember.memberJoinDate = MI_getDate();
     newMember.memberRewards = 0;
@@ -349,14 +377,15 @@ void MI_memberLogin() {
     char inputID[11];
     int verify;
 
-    printf("Please enter your Member ID (7-10 characters): ");
+    printf("Please enter your Member ID (at least 7, maximum 10 characters): ");
     scanf("%s", &inputID);
     rewind(stdin);
-    printf("\n\nPlease enter your password (7-10 characters): ");
-    char* inputPass = getPassword();
+    printf("\n\nPlease enter your password (at least 7, maximum 10 characters): ");
+    char* inputPass = MI_getPassword();
 
     verify = MI_verifyLogin(inputID, inputPass);
     if (verify == 0) {
+        MI_loggedInMemberDetails(inputID);
         MI_memberMenu(inputID);
     }
     else {
@@ -468,12 +497,12 @@ void MI_memberEditDetails(char* memberID) {
             if (toupper(decision) == 'Y') {
                 do {
                     system("cls");
-                    printf("\nPlease enter a new password (7-10 characters): ");
+                    printf("\nPlease enter a new password (at least 7, maximum 10 characters): ");
 
-                    char* tempPass = getPassword();
+                    char* tempPass = MI_getPassword();
 
                     printf("\nPlease re-enter to confirm new password: ");
-                    char* confirmPass = getPassword();
+                    char* confirmPass = MI_getPassword();
 
                     verify = strcmp(tempPass, confirmPass);
                     if (verify != 0) {
@@ -559,7 +588,7 @@ void MI_deleteAccount(char* memberID) {
             }
             else {
                 printf("\n\nAccount Deleted.\n");
-                
+
             }
 
         }
@@ -591,7 +620,7 @@ void MI_displayDetails(char* memberID) {
 }
 
 void MI_displayDetailsProcess(MI_Member* allMembers, int rows, char* memberID) {
-    
+
 
     for (int i = 0; i < rows; i++) {
         if (strcmp(allMembers[i].memberID, memberID) == 0) {
@@ -604,11 +633,11 @@ void MI_displayDetailsProcess(MI_Member* allMembers, int rows, char* memberID) {
             }
             printf("\nMember Name: %s\n", allMembers[i].memberName);
             printf("Phone Number: %s\n", allMembers[i].memberPhoneNo);
-            printf("Joined Date: %02d-%02d-%-04d\n", allMembers[i].memberJoinDate.day, 
+            printf("Joined Date: %02d-%02d-%-04d\n", allMembers[i].memberJoinDate.day,
                 allMembers[i].memberJoinDate.month, allMembers[i].memberJoinDate.year);
             printf("Member Points: %d\n", allMembers[i].memberRewards);
             printf("Member Wallet: %.2lf\n\n\n", allMembers[i].memberWallet);
-            
+
         }
     }
 }
@@ -677,7 +706,7 @@ void MI_shiftSpace(int MI_position) {
     }
 }
 
-char* getPassword() {
+char* MI_getPassword() {
     int i = 0;
     char tempPass[11];
     do {
@@ -703,8 +732,87 @@ char* getPassword() {
     return tempPass;
 }
 
+void MI_ErrorMessageForInput(int min, int max) {
+
+    printf("\n\nInput format wrong. Please enter at least %d, maximum %d characters only.\n\n", min, max);
+
+};
+
+int MI_InputDetailsValidation(char* value, char* mode) {
+
+    if (strcmp(mode, "idOrPass") == 0) {
+        if (strlen(value) < 7 || strlen(value) > 10) {
+
+            MI_ErrorMessageForInput(7, 10);
+            system("pause");
+            return 1;
+        }
+        return 0;
+    }
+    else if (strcmp(mode, "name") == 0) {
+
+        if (strlen(value) > 50 || strlen(value) < 3) {
+            MI_ErrorMessageForInput(3, 50);
+            system("pause");
+            return 1;
+        }
+        else {
+            for (int i = 0; i < strlen(value); i++) {
+
+                if (isdigit(value[i]) != 0 || ispunct(value[i]) != 0) {
+                    printf("\n\nYour name has invalid input (number/symbol). Please re-enter again.\n\n");
+                    system("pause");
+                    return 1;
+                }
+
+            }
+
+
+        }
+        return 0;
+
+    }
+    else if (strcmp(mode, "phoneNo") == 0) {
+
+        if (strlen(value) < 10 || strlen(value) > 11) {
+
+            MI_ErrorMessageForInput(10, 11);
+            system("pause");
+            return 1;
+        }
+        else {
+            for (int i = 0; i < strlen(value); i++) {
+
+                if (isdigit(value[i]) == 0) {
+                    printf("\n\nYour phone number has invalid input (character/symbol). Please re-enter again.\n\n");
+                    system("pause");
+                    return 1;
+                }
+
+            }
+        }
+    }else if(strcmp(mode,"topUp")){
+
+        for (int i = 0; i < strlen(value); i++) {
+
+            if (isdigit(value[i]) == 0) {
+                if (strcmp(value[i], ".") != 0) {
+
+                    printf("\n\nYour top up value has invalid input (character/symbol). Please re-enter again.\n\n");
+                    system("pause");
+                    return 1;
+                }
+            }
+
+        }
+        return 0;
+    };
+    return 0;
+};
+
+
 /*for admin use*/ void MI_displayAllMembers() {
-    
+
     int numOfMembers = MI_getNumberOfMembers();
     MI_Member* allMembers = MI_getMemberDetails(numOfMembers);
     MI_displayMembersHeaderOrFooter('H');
@@ -757,7 +865,7 @@ char* getPassword() {
     }
 
 };
-/*for admin use*/ void MI_displaySearchedMembers(char* memberID){
+/*for admin use*/ void MI_displaySearchedMembers(char* memberID) {
     int numOfMembers = MI_getNumberOfMembers();
     MI_Member* allMembers = MI_getMemberDetails(numOfMembers);
 
@@ -795,10 +903,11 @@ char* getPassword() {
     char MI_searchID[11], MI_searchName[50], tempDecision[3];
     int numOfMembers = MI_getNumberOfMembers();
     MI_Member* allMembers = MI_getMemberDetails(numOfMembers);
+    int MI_menuDecision;
     do {
-        do{
+        do {
             system("cls");
-            int MI_menuDecision;
+            
             printf("Search member through:\n\n");
             printf("1. Joined year\n");
             printf("2. Joined month\n");
@@ -806,11 +915,11 @@ char* getPassword() {
             printf("4. Member ID\n");
             printf("5. Member Name\n");
             printf("6. Back to menu\n\n\n");
-    
+
             printf("Mode: ");
             scanf("%s", &tempDecision);
             rewind(stdin);
-            
+
             if (G_MenuValidation(tempDecision, 6) != 0) {
                 G_ErrorMessage();
                 validation = 1;
@@ -819,9 +928,9 @@ char* getPassword() {
                 MI_menuDecision = atoi(tempDecision);
                 validation = 0;
             }
-        }while(validation != 0);
-        
-        
+        } while (validation != 0);
+
+
         switch (MI_menuDecision) {
 
         case 1:
@@ -919,7 +1028,7 @@ char* getPassword() {
     do {
         do {
             system("cls");
-            printf("Please enter a new Member ID (7-10 characters): ");
+            printf("Please enter a new Member ID (at least 7, maximum 10 characters): ");
             scanf("%s", &newMember.memberID);
             rewind(stdin);
             verify = MI_verifyRegister(newMember.memberID);
@@ -934,12 +1043,12 @@ char* getPassword() {
 
         do {
             system("cls");
-            printf("\nPlease enter a password (7-10 characters): ");
+            printf("\nPlease enter a password (at least 7, maximum 10 characters): ");
 
-            char* tempPass = getPassword();
+            char* tempPass = MI_getPassword();
 
             printf("\nPlease re-enter to confirm password: ");
-            char* confirmPass = getPassword();
+            char* confirmPass = MI_getPassword();
 
             verify = strcmp(tempPass, confirmPass);
             if (verify != 0) {
@@ -1030,7 +1139,7 @@ char* getPassword() {
     char tempID[11];
     int numOfMembers = MI_getNumberOfMembers();
     MI_Member* allMembers = MI_getMemberDetails(numOfMembers);
-    do{
+    do {
         MI_displayAllMembers();
         printf("Enter member ID to edit details: ");
         scanf("%s", &tempID);
@@ -1040,7 +1149,7 @@ char* getPassword() {
         char decision;
         MI_Member newDetails;
         int verify;
-    
+
         for (int i = 0; i < numOfMembers; i++) {
             if (strcmp(tempID, allMembers[i].memberID) == 0) {
                 strcpy(newDetails.memberID, tempID);
@@ -1050,12 +1159,12 @@ char* getPassword() {
                 if (toupper(decision) == 'Y') {
                     do {
                         system("cls");
-                        printf("\nPlease enter a new password (7-10 characters): ");
+                        printf("\nPlease enter a new password (at least 7, maximum 10 characters): ");
 
-                        char* tempPass = getPassword();
+                        char* tempPass = MI_getPassword();
 
                         printf("\nPlease re-enter to confirm new password: ");
-                        char* confirmPass = getPassword();
+                        char* confirmPass = MI_getPassword();
 
                         verify = strcmp(tempPass, confirmPass);
                         if (verify != 0) {
@@ -1156,7 +1265,7 @@ char* getPassword() {
                 fclose(fptrBin);
             }
         }
-    }while (G_ContinueOrStopCRUDRecord("Do you want to edit more members? (Y/N): ") == 1);
+    } while (G_ContinueOrStopCRUDRecord("Do you want to edit more members? (Y/N): ") == 1);
     free(allMembers);
 
 
@@ -1241,14 +1350,12 @@ char* getPassword() {
             free(newMembers);
             return NULL;
         }
-    
+
     }
 
     fclose(fptr);
     return newMembers;
 }
-
-int MI_CheckIDorPASSLength(char idOrPass[11]){};
 
 
 
