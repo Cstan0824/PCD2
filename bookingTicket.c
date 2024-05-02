@@ -43,7 +43,8 @@ typedef struct {
 	Time departureTime;
 	Time arrivalTime;
 	int availableSeat;
-}TrainSchedule;
+	int isCancelled;
+} TrainSchedule;
 
 typedef struct {
 	double discount;
@@ -70,7 +71,7 @@ extern Member loggedInMember = { 0 };
 //Global use
 Date G_GetCurrentDate();
 Time G_GetCurrentTime();
-int G_CalDiffDate(Date currDate, Date dateToCmp);
+int G_CalDiffDate(Date date, Date dateToCmp);
 int G_GetBinFileNumRow(string fileName, unsigned int dataSize);
 int G_InArray(void* arr, void* value, int elementSize, int length, int compare(void* a, void* b));
 int G_CompareInt(void* a, void* b);
@@ -111,7 +112,7 @@ void TB_CancelBooking(TrainSchedule trainSchedule);
 
 //Train Schedule
 TrainSchedule* TS_GetTrainSchedule(string trainID);
-int TS_GetTxtFileNumRow(string fileName);
+int G_GetTxtFileNumRow(string fileName);
 
 //Function 
 int main() {
@@ -175,12 +176,11 @@ Date G_GetCurrentDate() {
 	Date date = { getDate.wDay, getDate.wMonth, getDate.wYear };
 	return date;
 }
-int G_CalDiffDate(Date currDate, Date dateToCmp) {
-	//printf("Audit Log : int G_CalDiffDate(Date currDate, Date dateToCmp)\n");
-	return (currDate.year <= dateToCmp.year)
+int G_CalDiffDate(Date date, Date dateToCmp) {
+	return (date.year <= dateToCmp.year)
 		?
 		abs(
-			(currDate.year * 365 + currDate.month * 30 + currDate.day)
+			(date.year * 365 + date.month * 30 + date.day)
 			-
 			(dateToCmp.year * 365 + dateToCmp.month * 30 + dateToCmp.day)
 		)
@@ -830,14 +830,11 @@ void TB_GetSeatDetails(TrainSchedule trainSchedule, Ticket* ticket, int** notAva
 	strncpy(ticket->trainID, trainSchedule.trainID, 10);
 	ticket->coach = (char)((int)'A' + (int)floor(selectedSeatID / 40.0));
 	int seatType = TB_GetSeatType(selectedSeatID, numOfSeat, sizeof(numOfSeat) / sizeof(numOfSeat[0]));
-	if (seatType == -1) {
-		return;
-	}
+	if (seatType == -1) return;
 	ticket->seatType = seatType;
+
 	double price = TB_GetTicketPrice(ticket->seatType, trainSchedule.departureTime, trainSchedule.departureDate);
-	if (price == -1) {
-		return;
-	}
+	if (price == -1) return;
 	ticket->price = price;
 }
 int* TB_GetSeatAvailability(int *length,string trainID) {
@@ -948,8 +945,9 @@ int TB_CheckAccountBalance(double priceToPaid) {
 //Train Schedule
 TrainSchedule* TS_GetTrainSchedule(string trainID)
 {
-	int numRow = TS_GetTxtFileNumRow("TrainSchedule.txt");
+	int numRow = G_GetTxtFileNumRow("TrainSchedule.txt");
 	TrainSchedule *trainSchedule = (TrainSchedule *)malloc(sizeof(TrainSchedule) * numRow);
+	TrainSchedule tempTrainSchedule = { 0 };
 	if (!trainSchedule) {
 		printf("Memory Allocation Failed.");
 		exit(ISERROR);
@@ -966,24 +964,31 @@ TrainSchedule* TS_GetTrainSchedule(string trainID)
 		if (inputIsError == -1) break;
 		printf("%-3s %-20s %-20s %-20s %-20s\n", "NO.", "Departure Station", "Arrival Station", "Departure Date", "Duration Time");
 		printf("%-3s %-20s %-20s %-20s %-20s\n", "---", "---------------", "-------------", "--------------", "-------------");
-		for (int i = 0; fscanf(fptr, "%[^|]|%[^|]|%[^|]|%d/%d/%d|%d:%d|%d:%d|%d\n",
-			&trainSchedule[i].trainID, &trainSchedule[i].departureStation, &trainSchedule[i].arrivalStation,
-			&trainSchedule[i].departureDate.day, &trainSchedule[i].departureDate.month, &trainSchedule[i].departureDate.year,
-			&trainSchedule[i].departureTime.hour, &trainSchedule[i].departureTime.min,
-			&trainSchedule[i].arrivalTime.hour, &trainSchedule[i].arrivalTime.min,
-			&trainSchedule[i].availableSeat) != EOF; i++)
+		for (int i = 0; 
+			fscanf(fptr, "%[^|]|%[^|]|%[^|]|%02d:%02d|%02d:%02d|%d|%02d/%02d/%04d|%d\n",
+			&tempTrainSchedule.trainID, &tempTrainSchedule.departureStation, &tempTrainSchedule.arrivalStation,
+			&tempTrainSchedule.departureTime.hour, &tempTrainSchedule.departureTime.min,
+			&tempTrainSchedule.arrivalTime.hour, &tempTrainSchedule.arrivalTime.min,
+			&tempTrainSchedule.availableSeat,
+			&tempTrainSchedule.departureDate.day, &tempTrainSchedule.departureDate.month, &tempTrainSchedule.departureDate.year,
+			&tempTrainSchedule.isCancelled) != EOF;  )
+			
 		{
+			if (tempTrainSchedule.isCancelled == 1) {
+				continue;
+			}
+			trainSchedule[i] = tempTrainSchedule;
+			
 			if (trainID == NULL) {
 				printf("%02d. %-20s %-20s %02d/%02d/%04d %d:%d ~ %d:%d\n", ++count,
 					trainSchedule[i].departureStation, trainSchedule[i].arrivalStation,
 					trainSchedule[i].departureDate.day, trainSchedule[i].departureDate.month, trainSchedule[i].departureDate.year,
 					trainSchedule[i].departureTime.hour, trainSchedule[i].departureTime.min,
 					trainSchedule[i].arrivalTime.hour, trainSchedule[i].arrivalTime.min);
+				i++;
 				continue;
 			}
-
 			if (strncmp(trainSchedule[i].trainID, trainID, 10)) return (trainSchedule + i);
-			
 		}
 		fclose(fptr);
 
@@ -991,12 +996,10 @@ TrainSchedule* TS_GetTrainSchedule(string trainID)
 			printf("No Result founded for %s\n", trainID);
 			return NULL;
 		}
-
-		
 	} while (inputIsError = G_IntIsValidated("Select The train Schedule", count, &selectedTrainID));
 	return inputIsError == -1 ? NULL : (trainSchedule + selectedTrainID - 1);
 }
-int TS_GetTxtFileNumRow(string fileName) 
+int G_GetTxtFileNumRow(string fileName) 
 {
 	char buffer[400] = ""; // might need to increase the buffer
 	int numRow = 0;
