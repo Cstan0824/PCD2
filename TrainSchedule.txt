@@ -1,0 +1,10 @@
+T0001|Kuala Lumpur Central|Negeri Sembilan(Seremban) |12:19|14:51|40|17/5/2024|0
+T0002|Negeri Sembilan(Seremban)|Kuala Lumpur Central|12:30|15:03|120|24/5/2024|0
+T0003|Kuala Lumpur Central|Penang(Butterworth)|03:55|19:55|80|21/5/2024|0
+T0004|Penang(Butterworth)|Kuala Lumpur Central|04:00|20:00|40|29/5/2024|0
+T0005|Kuala Lumpur Central|Kedah(Alor Setar)|05:05|21:37|120|18/5/2024|0
+T0006|Kedah(Alor Setar)|Kuala Lumpur Central|04:10|20:30|40|1/5/2024|0
+T0007|Kuala Lumpur Central|Perak(Taiping)|01:37|17:09|80|3/5/2024|0
+T0008|Perak(Taiping)|Kuala Lumpur Central|02:15|06:00|120|6/5/2024|0
+T0009|Kuala Lumpur Central|Johor(Segamat)|02:35|18:30|40|10/5/2024|0
+T0010|Kuala Lumpur Central|Perlis(Arau)|05:05|22:37|80|15/5/2024|0
