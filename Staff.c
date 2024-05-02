@@ -104,7 +104,7 @@ void SI_addStaff() {
 		printf("  Unable to open file.\n");
 		exit(ISERROR);
 	}
-	for (int i = 0; fscanf(fptr, "%[^|]|%[^|]|%[^|]|%[^|]|%d/%d/%d|%f\n",
+	for (int i = 0; fscanf(fptr, "%[^|]|%[^|]|%[^|]|%[^|]|%d/%d/%d|%lf\n",
 		&staffList[i].staffID, &staffList[i].name, &staffList[i].password, &staffList[i].position,
 		&staffList[i].joinedDate.day, &staffList[i].joinedDate.month, &staffList[i].joinedDate.year,
 		&staffList[i].salary) != EOF; i++);
@@ -205,7 +205,7 @@ void SI_addStaff() {
 	rewind(stdin);
 	printf("\n");
 
-	FILE* fptr = fopen("staffs.txt", "a");
+	fptr = fopen("staffs.txt", "a");
 	if (!fptr) {
 		printf("Unable to open file.\n");
 		exit(ISERROR);
@@ -277,7 +277,7 @@ void SI_modifyStaff() {
 		printf("  Unable to open file.\n");
 		exit(ISERROR);
 	}
-	for (r = 0; fscanf(fptr, "%[^|]|%[^|]|%[^|]|%[^|]|%d/%d/%d|%f\n",
+	for (r = 0; fscanf(fptr, "%[^|]|%[^|]|%[^|]|%[^|]|%d/%d/%d|%lf\n",
 		&staff[r].staffID, &staff[r].name, &staff[r].password, &staff[r].position,
 		&staff[r].joinedDate.day, &staff[r].joinedDate.month, &staff[r].joinedDate.year,
 		&staff[r].salary) != EOF; r++);
@@ -386,7 +386,7 @@ void SI_modifyStaff() {
 		exit(-1);
 	}
 	for (i = 0; i < r; i++) {
-		fptrrintf(fptr, "%s|%s|%s|%s|%d/%d/%d|%.2f\n", staff[i].staffID, staff[i].name, staff[i].password, staff[i].position, staff[i].joinedDate.day, staff[i].joinedDate.month, staff[i].joinedDate.year, staff[i].salary);
+		fprintf(fptr, "%s|%s|%s|%s|%d/%d/%d|%.2f\n", staff[i].staffID, staff[i].name, staff[i].password, staff[i].position, staff[i].joinedDate.day, staff[i].joinedDate.month, staff[i].joinedDate.year, staff[i].salary);
 	}
 	fclose(fptr);
 }
@@ -401,7 +401,7 @@ void SI_displayStaff() {
 		exit(ISERROR);
 	}
 
-	for (r = 0; fscanf(fptr, "%[^|]|%[^|]|%[^|]|%[^|]|%d/%d/%d|%f\n",
+	for (r = 0; fscanf(fptr, "%[^|]|%[^|]|%[^|]|%[^|]|%d/%d/%d|%lf\n",
 		&staff.staffID, &staff.name, &staff.password, &staff.position,
 		&staff.joinedDate.day, &staff.joinedDate.month, &staff.joinedDate.year,
 		&staff.salary) != EOF; r++) 
@@ -419,7 +419,7 @@ void SI_displayStaff() {
 
 void SI_deleteStaff() {
 	char staffDel[10] = "";
-	Staff staff[20];
+	Staff staff[20] = { 0 };
 	int i = 0;
 
 	FILE* fptr = fopen("staffs.txt", "r");
@@ -431,7 +431,7 @@ void SI_deleteStaff() {
 
 
 	for (i = 0;
-		fscanf(fptr, "%[^|]|%[^|]|%[^|]|%[^|]|%d/%d/%d|%f\n",
+		fscanf(fptr, "%[^|]|%[^|]|%[^|]|%[^|]|%d/%d/%d|%lf\n",
 			staff[i].staffID, &staff[i].name, &staff[i].password, &staff[i].position,
 			&staff[i].joinedDate.day, &staff[i].joinedDate.month, &staff[i].joinedDate.year,
 			&staff[i].salary) != EOF; i++);
