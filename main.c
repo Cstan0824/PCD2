@@ -88,14 +88,17 @@ int G_CompareInt(void* a, void* b);
 int G_ConfirmationIsValidated(string prompt);
 int G_IntIsValidated(string prompt, int range, int* output);
 void G_ErrorMessage();
-int G_systemMenu();
 int G_GetTxtFileNumRow(string fileName);
 int G_MenuValidation(string decision, int range);
 Time G_GetTime(string prompt);
 
-//Booking Ticket
 //Menu
+int G_systemMenu();
 int TB_mainMenu();
+int TS_mainMenu();
+int SI_mainMenu();
+int MI_mainMenu();
+//Booking Ticket
 //Read
 void TB_DisplayBookingRecord(string searchFilter);
 void TB_DisplayBookingRecordHdr(Booking booking, double* totalPrice, TrainSchedule trainSchedule);
@@ -121,7 +124,6 @@ void TB_CancelBooking(TrainSchedule trainSchedule);
 
 //Train Schedule
 TrainSchedule* TS_GetTrainSchedule(string trainID);
-int TS_mainMenu();
 void TS_addSchedule();
 void TS_serachSchedule();
 void TS_modifySchedule();
@@ -129,7 +131,6 @@ void TS_deleteSchedule();
 void TS_displaySchedule();
 
 //Staff Information
-int SI_mainMenu();
 void SI_addStaff();
 void SI_searchStaff();
 void SI_modifyStaff();
@@ -150,8 +151,6 @@ void MI_loggedInMemberDetails(string memberID);
 string MI_getPassword();
 int MI_verifyRegister(string memberID);
 void MI_registerMember();
-int MI_mainMenu();
-void MI_memberMenu();
 void MI_memberLogin();
 int MI_verifyLogin(string inputID, string inputPass);
 
@@ -177,33 +176,11 @@ void MI_ErrorMessageForInputLength(int min, int max);
 
 //Function 
 int main() {
-	
-	while (TB_mainMenu());
+	MI_drawTrain();
+	while (G_systemMenu());
 	return 0;
 }
-int G_systemMenu() {
-	int inputIsError = 0;
-	int selectedMenu = 0;
-	while (inputIsError =
-		G_IntIsValidated("Select The Mode", 4, &selectedMenu));
-	if (selectedMenu == -1) {
-		return 0;
-	}
-	switch (selectedMenu)
-	{
-	case 1:
-		//Schedule details[Member : View | Staff : Create, Delete, Edit]
-	case 2:
-		//Booking details[Member : Create, View, Cancel | Staff : Create, View, Cancel, Edit]
-	case 3:
-		//Member Details[Guest : Register  | Member : View Details | Staff : View, Edit, Delete, Register] Member Account
-	case 4:
-		//Staff Details[Staff : Register, Edit, View, Delete] Staff account
-	default:
-		break;
-	}
-	return 1;
-}
+
 Date G_GetCurrentDate() {
 	//printf("Audit Log : Date G_GetCurrentDate()\n");
 	SYSTEMTIME getDate;
@@ -362,55 +339,8 @@ Time G_GetTime(string prompt) {
 	}
 	return tempTime;
 }
+
 //Booking Ticket
-int TB_mainMenu() {
-	int inputIsError = 1;
-	int decision;
-	//function pointer with length of 3
-	void (*bookingRouter[3])(TrainSchedule trainSchedule) =
-	{ TB_BookingTicket,TB_CancelBooking,TB_EditBooking };
-
-	const char* bookingMenu[] =
-	{
-		"Display Booking History",
-		"Booking Ticket",
-		"Cancel Booking",
-		"Modified Booking Details"
-	};
-	//if isAdmin = 1 the range will be 4, else it will be 3; member is restricted to access the modification
-	do
-	{
-		if (inputIsError == -1)	return 0;
-
-		system("cls");
-
-		for (int i = 0; i < (3 + isAdmin); i++)
-		{
-			printf("%d. %s\n", i + 1, bookingMenu[i]);
-		}
-	} while (inputIsError = G_IntIsValidated("Select The Menu", 3 + isAdmin, &decision));
-	//get member details
-	//if (isAdmin)
-
-	//get train details
-	TrainSchedule* trainSchedule = TS_GetTrainSchedule(NULL);
-	if (trainSchedule == NULL) {
-		return 0;
-	}
-	if (decision == 1) {
-		TB_DisplayBookingRecord(
-			G_ConfirmationIsValidated("Do you want to search all result?")
-			?
-			"ALL"
-			:
-			trainSchedule->trainID
-		);
-		return 1;
-	}
-	//decision - 1 + 1
-	bookingRouter[decision](*trainSchedule);
-	return 1;
-}
 
 //Read[Admin/Member]
 void TB_DisplayBookingRecord(string searchFilter)
@@ -827,6 +757,8 @@ void TB_BookingTicket(TrainSchedule trainSchedule)
 
 	fclose(fptr);
 	free(booking);
+
+	//call the function to update the global variable to file 
 }
 Booking* TB_GetBookingDetails(int* length) {
 	int lengthOfBooking = 0;
@@ -1143,42 +1075,6 @@ TrainSchedule* TS_GetTrainSchedule(string trainID)
 	return inputIsError == -1 ? NULL : (trainSchedule + selectedTrainID - 1);
 }
 
-int TS_mainMenu() {
-	int select;
-	int inputIsError = 1;
-	do
-	{
-		if (inputIsError == -1) return 0;
-		printf("You are successfully enter into Train Schedule Module\n");
-		printf("=====================================================\n");
-		printf("1.Show the train schedule\n");
-		printf("2.Add the train schedule\n");
-		printf("3.Search the train schedule\n");
-		printf("4.Delete the train schedule\n");
-		printf("5.Modify the train schedule\n");
-	} while (inputIsError = G_IntIsValidated("Select The Menu", 5, &select));
-	switch (select) {
-	case 1:
-		TS_displaySchedule();
-		break;
-	case 2:
-		TS_addSchedule();
-		break;
-	case 3:
-		TS_serachSchedule();
-		break;
-	case 4:
-		TS_deleteSchedule();
-		break;
-	case 5:
-		TS_modifySchedule();
-		break;
-	default:
-		printf("Please select again!\n");
-		break;
-	};
-	return 1;
-}
 void TS_displaySchedule() {
 	int count = 0;
 	TrainSchedule train = { 0 };
@@ -1636,42 +1532,6 @@ void TS_modifySchedule() {
 
 
 //Staff Informaion[Staff Only]
-int SI_mainMenu() {
-	int decision;
-	int inputIsError = 0;
-	do {
-		if (inputIsError == -1) return 0;
-		if (inputIsError == 1) G_ErrorMessage();
-		printf("\n\t< Staff Information >\n");
-		G_lineDesign();
-		printf("  1. Add\n");
-		printf("  2. Search\n");
-		printf("  3. Modify\n");
-		printf("  4. Display\n");
-		printf("  5. Delete\n");
-		G_lineDesign();
-	} while (G_IntIsValidated("Select The Memu", 5, &decision));
-	system("cls");
-	switch (decision) {
-	case 1:
-		SI_addStaff();
-		break;
-	case 2:
-		SI_searchStaff();
-		break;
-	case 3:
-		SI_modifyStaff();
-		break;
-	case 4:
-		SI_displayStaff();
-		break;
-	case 5:
-		SI_deleteStaff();
-		break;
-	}
-	return 1;
-
-}
 void SI_addStaff() {
 	Staff staffList[20] = { 0 };
 	int dayOfMonth[12] = { 31,29,31,30,31,30,31,31,30,31,30,31 };
@@ -2077,86 +1937,6 @@ void SI_deleteStaff() {
 
 
 //Member Information
-int MI_mainMenu() {
-	int validation = 0;
-	int MI_menuDecision;
-	do {
-
-		system("cls");
-		printf("Welcome to Train Ticketing System\n\n");
-		printf("Choose your mode: \n");
-		printf("1. Member Login\n");
-		printf("2. Member Register\n");
-		printf("3. Exit Program\n\n\n");
-
-	} while (G_IntIsValidated("Mode: ", 3, &MI_menuDecision));
-
-	switch (MI_menuDecision) {
-	case 1:
-		MI_memberLogin();
-		break;
-	case 2:
-		MI_registerMember();
-		break;
-	case 3:
-		exit(-1);
-	default:
-		printf("Invalid input. Redirecting...\n\n");
-		system("pause");
-		system("cls");
-		MI_mainMenu();
-	}
-
-	return 1;
-}
-void MI_memberMenu() {
-	int MI_memberMenuDecision;
-	int validation = 0;
-	do {
-		system("cls");
-		printf("Welcome, %s\n\n\n", loggedInMember.memberName);
-		MI_displayDetails(loggedInMember.memberID);
-		printf("Choose your mode: \n");
-		printf("1. Top Up Wallet\n");
-		printf("2. Edit Details\n");
-		printf("3. Check Ticket Schedule\n");
-		printf("4. Book Tickets\n");
-		printf("5. Booking Details\n");
-		printf("6. Delete Account\n");
-		printf("7. Exit Program\n\n\n");
-
-	} while (G_IntIsValidated("Mode: ", 3, &MI_memberMenuDecision));
-
-
-	switch (MI_memberMenuDecision) {
-	case 1:
-		MI_topUpWallet(loggedInMember.memberID);
-		break;
-	case 2:
-		MI_MemberEditDetails(loggedInMember.memberID);
-		break;
-	case 3:
-		/*TS_showSchedule();*/
-		break;
-	case 4:
-		/* TB_BookingTicket();*/
-		break;
-	case 5:
-		/*TB_GetBookingDetails();*/
-		break;
-	case 6:
-		MI_deleteAccount(loggedInMember.memberID);
-		break;
-	case 7:
-		exit(-1);
-		break;
-	default:
-		printf("Invalid input. Redirecting...\n\n");
-		system("pause");
-		system("cls");
-		MI_memberMenu();
-	}
-};
 int MI_getNumberOfMembers() {
 	int rows;
 	FILE* fptr = fopen("member-details.bin", "rb");
@@ -2216,7 +1996,7 @@ void MI_registerMember() {
 		do {
 			system("cls");
 			printf("\n\nPlease enter a new Member ID (at least 7, maximum 10 characters): ");
-			scanf("%s", &newMember.memberID);
+			scanf("%[^\n]", &newMember.memberID);
 			rewind(stdin);
 		} while (MI_InputDetailsValidation(newMember.memberID, "idOrPass") != 0);
 		verify = MI_verifyRegister(newMember.memberID);
@@ -2282,7 +2062,7 @@ void MI_registerMember() {
 	printf("Member %s has been registered successfully!\n\n", newMember.memberName);
 	system("pause");
 	system("cls");
-	MI_mainMenu();
+	G_systemMenu();
 }
 int MI_verifyRegister(string memberID) {
 	int rows = MI_getNumberOfMembers();
@@ -2307,29 +2087,29 @@ void MI_memberLogin() {
 	int verify;
 	do {
 		printf("Please enter your Member ID (at least 7, maximum 10 characters): ");
-		scanf("%s", &inputID);
+		scanf("%[^\n]", &inputID);
 		rewind(stdin);
 		printf("\n\nPlease enter your password (at least 7, maximum 10 characters): ");
 		string inputPass = MI_getPassword();
 
 		verify = MI_verifyLogin(inputID, inputPass);
-		if (verify == 0) {
-			MI_loggedInMemberDetails(inputID);
-			MI_memberMenu();
-		}
-		else {
-			printf("Wrong ID or password.");
-			continue;
+
+		if (verify != 0) {
+			printf("Wrong ID or password.\n");
 		}
 	} while (verify != 0);
-
+	
+	if (verify == 0) {
+		MI_loggedInMemberDetails(inputID);
+		while (MI_mainMenu());
+	}
 }
 int MI_verifyLogin(string inputID, string inputPass) {
 	int numOfMembers = MI_getNumberOfMembers();
 	Member* allMembers = MI_getMemberDetails(numOfMembers);
 	if (allMembers == NULL) {
 		printf("\nFailed to read member details.\n");
-		exit(-1);
+		exit(ISERROR);
 	}
 
 	for (int i = 0; i < numOfMembers; i++) {
@@ -2397,7 +2177,7 @@ void MI_topUpWallet(string memberID) {
 	printf("Wallet updated.\n\n");
 	fclose(fptrBin);
 	free(allMembers);
-	MI_memberMenu(memberID);
+	MI_mainMenu(memberID);
 }
 void MI_MemberEditDetails(string memberID) {
 	int numOfMembers = MI_getNumberOfMembers();
@@ -2520,7 +2300,7 @@ void MI_deleteAccount(string memberID) {
 	free(allMembers);
 	system("pause");
 	system("cls");
-	MI_mainMenu();
+	G_systemMenu();
 }
 void MI_displayDetails(string memberID) {
 	int numOfMembers = MI_getNumberOfMembers();
@@ -3282,3 +3062,313 @@ int MI_InputDetailsValidation(string value, string mode) {
 	} while (G_ConfirmationIsValidated("Do you want to edit more members? (Y/N): ") == 1);
 	free(allMembers);
 };
+
+//System Menu
+int G_systemMenu()
+{
+	int inputIsError = 0;
+	int systemMenuDecision;
+	do {
+		if (inputIsError == ISERROR) exit(ISERROR);
+		if (inputIsError == 1) G_ErrorMessage();
+
+
+		system("cls");
+		printf("Welcome to Train Ticketing System\n\n");
+		printf("Choose your mode: \n");
+		printf("1. Member Login\n");
+		printf("2. Member Register\n");
+		printf("3. Staff Login\n");
+	} while (inputIsError =
+		G_IntIsValidated("Mode: ", 3, &systemMenuDecision));
+
+	switch (systemMenuDecision)
+	{
+	case 1:
+		MI_memberLogin();
+		break;
+	case 2:
+		MI_registerMember();
+		break;
+	case 3:
+		//create a staff login - get from SI module
+		while (SI_mainMenu());
+	}
+	return 1;
+}
+int SI_mainMenu() {
+	int staffInformationDecision;
+	int inputIsError = 0;
+	do {
+		if (inputIsError == ISERROR) return 0;
+		if (inputIsError == 1) G_ErrorMessage();
+		system("cls");
+		printf("\n\t< Staff Information >\n");
+		G_lineDesign();
+		printf("1. Staff Account Management\n");
+		printf("2. Member Details Management\n");
+		printf("3. Train Schedule Management\n");
+		G_lineDesign();
+	} while (inputIsError = 
+		G_IntIsValidated("Mode: ", 3, &staffInformationDecision));
+	switch (staffInformationDecision) {
+	case 1:
+		while (G_staffAccountManagementMenu());
+		break;
+	case 2:
+		while (MI_mainMenuForStaff());
+		break;
+	case 3:
+		while (TS_mainMenu());
+		break;
+	}
+	return 1;
+}
+int TS_mainMenu() {
+	int trainScheduleDecision = 1;
+	int inputIsError = 1;
+	do
+	{
+		if (inputIsError == ISERROR) return 0;
+		printf("=====================================================\n");
+		printf("1.Show train schedule\n");
+		printf("2.Add train schedule\n");
+		printf("3.Search train schedule\n");
+		printf("4.Delete schedule\n");
+		printf("5.Modify train schedule\n");
+	} while (inputIsError = 
+		G_IntIsValidated("Mode: ", 5, &trainScheduleDecision));
+	switch (trainScheduleDecision) {
+	case 1:
+		TS_displaySchedule();
+		break;
+	case 2:
+		TS_addSchedule();
+		break;
+	case 3:
+		TS_serachSchedule();
+		break;
+	case 4:
+		TS_deleteSchedule();
+		break;
+	case 5:
+		TS_modifySchedule();
+		break;
+	default:
+		printf("Please select again!\n");
+		break;
+	};
+	return 1;
+}
+int TB_mainMenu() {
+	int inputIsError = 1;
+	int ticketBookingDecision;
+	//function pointer with length of 3
+	void (*bookingRouter[3])(TrainSchedule trainSchedule) =
+	{ TB_BookingTicket,TB_CancelBooking,TB_EditBooking };
+
+	const char* bookingMenu[] =
+	{
+		"Display Booking History",
+		"Booking Ticket",
+		"Cancel Booking",
+		"Modified Booking Details"
+	};
+	//if isAdmin = 1 the range will be 4, else it will be 3; member is restricted to access the modification
+	do
+	{
+		if (inputIsError == ISERROR) return 0;
+
+		system("cls");
+
+		for (int i = 0; i < (3 + isAdmin); i++)
+		{
+			printf("%d. %s\n", i + 1, bookingMenu[i]);
+		}
+	} while (inputIsError = G_IntIsValidated("Mode", 3 + isAdmin, &ticketBookingDecision));
+	//get member details
+	//if (isAdmin)
+
+	//get train details
+	TrainSchedule* trainSchedule = TS_GetTrainSchedule(NULL);
+	if (trainSchedule == NULL) {
+		return 0;
+	}
+	if (ticketBookingDecision == 1) {
+		TB_DisplayBookingRecord(
+			G_ConfirmationIsValidated("Do you want to search all result?")
+			?
+			"ALL"
+			:
+			trainSchedule->trainID
+		);
+		return 1;
+	}
+	//decision - 1 + 1
+	bookingRouter[ticketBookingDecision](*trainSchedule);
+	return 1;
+}
+int MI_mainMenu() {
+	int staffInformationDecision;
+	int inputIsError = 0;
+	do {
+		if (inputIsError == ISERROR) return 0;
+		if (inputIsError == 1) G_ErrorMessage();
+
+		system("cls");
+		printf("Choose your mode: \n");
+		printf("1. Member Account Management\n");
+		printf("2. Booking Management\n");
+		printf("3. View Train Schedule\n");
+
+	} while (inputIsError =
+		G_IntIsValidated("Mode: ", 3, &staffInformationDecision));
+
+	switch (staffInformationDecision) {
+	case 1:
+		while (G_memberAccountManagementMenu());
+		break;
+	case 2:
+		while (TB_mainMenu());
+		break;
+	case 3:
+		TS_displaySchedule();
+		break;
+	}
+	return 1;
+}
+int MI_mainMenuForStaff() {
+	int mainMenuForStaffDecision;
+	int inputIsError = 0;
+	do {
+		if (inputIsError == ISERROR) return 0;
+		if (inputIsError == 1) G_ErrorMessage();
+
+		system("cls");
+		printf("Choose your mode: \n");
+		printf("1. View Member Account\n");
+		printf("2. Search Member Account\n");
+		printf("3. Register New Member Account\n");
+		printf("4. Edit Member Account\n");
+		printf("5. Delete Member Account\n");
+	} while (inputIsError =
+		G_IntIsValidated("Mode: ", 5, &mainMenuForStaffDecision));
+
+	switch (mainMenuForStaffDecision) {
+	case 1:
+		MI_displayAllMembers();
+		break;
+	case 2:
+		MI_staffSearchMember();
+		break;
+	case 3:
+		MI_staffAddMember();
+		break;
+	case 4:
+		MI_staffEditMemberDetails();
+		break;
+	case 5:
+		MI_staffDeleteMember();
+		break;
+	}
+	return 1;
+}
+int G_memberDetailsManagementForStaffMenu() {
+	//manage member details, booking details
+	int memberDetailsManagementDecision;
+	int inputIsError = 0;
+	do {
+		if (inputIsError == ISERROR) return 0;
+		if (inputIsError == 1) G_ErrorMessage();
+		system("cls");
+		printf("1. Member\'s Details Management\n");
+		printf("2. Member\'s Booking Management\n");
+		G_lineDesign();
+	} while (inputIsError = 
+		G_IntIsValidated("Mode: ", 2, &memberDetailsManagementDecision));
+	switch (memberDetailsManagementDecision) {
+	case 1:
+		while (MI_mainMenuForStaff());
+		break;
+	case 2:
+		while (TB_mainMenu());
+		break;
+	}
+	return 1;
+}
+int G_staffAccountManagementMenu() {
+	int staffAccountManagementMenuDecision;
+	int inputIsError = 0;
+	do {
+		if (inputIsError == -1) return 0;
+		if (inputIsError == 1) G_ErrorMessage();
+		system("cls");
+		printf("\n\t< Staff Information >\n");
+		G_lineDesign();
+		printf("  1. Add Staff\n");
+		printf("  2. Search Staff\n");
+		printf("  3. Modify Staff Details\n");
+		printf("  4. Display Staff Details\n");
+		printf("  5. Delete Staff\n");
+		G_lineDesign();
+	} while (inputIsError = 
+		G_IntIsValidated("Mode: ", 5, &staffAccountManagementMenuDecision));
+	system("cls");
+	switch (staffAccountManagementMenuDecision) {
+	case 1:
+		SI_addStaff();
+		break;
+	case 2:
+		SI_searchStaff();
+		break;
+	case 3:
+		SI_modifyStaff();
+		break;
+	case 4:
+		SI_displayStaff();
+		break;
+	case 5:
+		SI_deleteStaff();
+		break;
+	}
+	return 1;
+}
+int G_memberAccountManagementMenu() {
+	int accountManagementMenuDecision;
+	int inputIsError = 0;
+	do {
+		if (inputIsError == -1) {
+			return 0;
+		}
+		if (inputIsError == 1) {
+			G_ErrorMessage();
+		}
+		system("cls");
+		printf("Welcome, %s\n\n\n", loggedInMember.memberName);
+		MI_displayDetails(loggedInMember.memberID);
+		printf("Choose your mode: \n");
+		printf("1. Edit Account Details\n");
+		printf("2. Top up Ewallet\n");
+		printf("3. Delete Account\n"); // all related booking will be cancelled also
+	} while (inputIsError =
+		G_IntIsValidated("Mode: ", 3, &accountManagementMenuDecision));
+	switch (accountManagementMenuDecision)
+	{
+	case 1:
+		MI_MemberEditDetails(loggedInMember.memberID);
+		break;
+	case 2:
+		MI_topUpWallet(loggedInMember.memberID);
+		break;
+	case 3:
+		MI_deleteAccount(loggedInMember.memberID);
+		break;
+	}
+	return 1;
+}
+
+//additional function
+//when train schedule is deleted, all related booking should be deleted
+//when member account is deleted, all related booking should be deleted
+//update the member edited details[updated eWallet balance, reward point] - get from MI module
+//staff login - get from SI module
