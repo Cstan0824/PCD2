@@ -1979,7 +1979,7 @@ void MI_loggedInMemberDetails(string memberID) {
 	for (int i = 0; i < numOfMembers; i++) {
 		if (strncmp(allMembers[i].memberID, memberID, 11) == 0) {
 
-			allMembers[i] = loggedInMember;
+			loggedInMember = allMembers[i];
 
 		}
 
@@ -2387,29 +2387,34 @@ void MI_shiftSpace(int MI_position) {
 }
 string MI_getPassword() {
 	int i = 0;
-	char tempPass[11];
-	string tempPass2 = tempPass;
+	static char tempPass[11]; // Static array to persist after function returns
+
 	do {
-		char c = (char)_getch();
-		if (c == '\b') {
+		char c = _getch();
+
+		if (c == '\r') { // Enter key
+			break;
+		}
+		else if (c == '\b') { // Backspace
 			if (i > 0) {
 				i--;
 				printf("\b \b"); // Move cursor back, print space, move cursor back again
 			}
 		}
-		else if ((int)c <= 33 || (int)c >= 126) {
+		else if ((int)c <= 33 || (int)c >= 126) { // Check if printable character
 			continue;
 		}
 		else {
-			if (i < 10) { // Limiting the password length to 10 characters
+			if (i < 10) { // Limiting the password length
 				tempPass[i++] = c;
 				printf("*");
 			}
 		}
 	} while (1);
+
 	tempPass[i] = '\0'; // Null-terminate the password string
-	rewind(stdin);
-	return tempPass2;
+	printf("\n"); // Print newline after password entry
+	return tempPass;
 }
 void MI_ErrorMessageForInputLength(int min, int max) {
 	//for input data length (strlen)
