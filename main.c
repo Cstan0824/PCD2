@@ -257,10 +257,10 @@ int G_ConfirmationIsValidated(string prompt) {
 	return strncmp(confirmation, "Y", 3) == 0;
 }
 int G_IntIsValidated(string prompt, int range, int* output) {
-	char digit[3] = "";
-	char decision[3] = "";
+	char digit[10] = "";
+	char decision[10] = "";
 	printf("%s  [ENTER '0' to escape] >>", prompt);
-	scanf("%[^\n]", &decision);
+	scanf("%9[^\n]", &decision);
 	rewind(stdin);
 
 	if (strncmp(decision, "0", 3) == 0) {
@@ -1565,7 +1565,7 @@ void SI_addStaff() {
 		printf("Staff ID (Enter \'0000\' to exit):");
 		scanf("%[^\n]", &staff.staffID);
 		rewind(stdin);
-		if (strncmp(staff.staffID, "0000", 11)) {
+		if (strncmp(staff.staffID, "0000", 11) == 0) {
 			return;
 		}
 		for (int i = 0; i < 20; i++)
@@ -1581,25 +1581,25 @@ void SI_addStaff() {
 
 	//Name
 	printf("Name (Enter \'0000\' to exit):");
-	scanf("%[^\n]", &staff.name);
+	scanf("%19[^\n]", &staff.name);
 	rewind(stdin);
-	if (strncmp(staff.name, "0000", 11)) {
+	if (strncmp(staff.name, "0000", 11) == 0) {
 		return;
 	}
 
 	//Password
 	printf("Password (Enter \'0000\' to exit):");
-	scanf("%[^\n]", &staff.password);
+	scanf("%29[^\n]", &staff.password);
 	rewind(stdin);
-	if (strncmp(staff.password, "0000", 11)) {
+	if (strncmp(staff.password, "0000", 11) == 0) {
 		return;
 	}
 
 	//Position
 	printf("Position (Enter \'0000\' to exit):");
-	scanf("%[^\n]", &staff.position);
+	scanf("%19[^\n]", &staff.position);
 	rewind(stdin);
-	if (strncmp(staff.position, "0000", 11)) {
+	if (strncmp(staff.position, "0000", 11) == 0) {
 		return;
 	}
 
@@ -1610,8 +1610,8 @@ void SI_addStaff() {
 
 		//Joined Date (Year)
 		while (inputIsError =
-			G_IntIsValidated("Enter the Joined Date(DD/MM/\033[0;34mYYYY\033[0;37m)", currDate.year, &staff.joinedDate.year)) {
-			if (inputIsError == -1) {
+			G_IntIsValidated("Enter the Joined Date(Years)", currDate.year, &staff.joinedDate.year)) {
+			if (inputIsError == ISERROR) {
 				return;
 			}
 			if (inputIsError == 1)  G_ErrorMessage();
@@ -1619,8 +1619,8 @@ void SI_addStaff() {
 
 		//Joined Date(Month)
 		while (inputIsError =
-			G_IntIsValidated("Enter the Joined Date(DD/\033[0;34mMM\033[0;37m/YYYY)", 12, &staff.joinedDate.month)) {
-			if (inputIsError == -1) {
+			G_IntIsValidated("Enter the Joined Date(Months)", 12, &staff.joinedDate.month)) {
+			if (inputIsError == ISERROR) {
 				return;
 			}
 			if (inputIsError == 1)  G_ErrorMessage();
@@ -1631,8 +1631,8 @@ void SI_addStaff() {
 
 		//Joined Date(Day)
 		while (inputIsError =
-			G_IntIsValidated("Enter the Joined Date(\033[0;34mDD\033[0;37m/MM/YYYY)", dayOfMonth[staff.joinedDate.month - 1], &staff.joinedDate.day)) {
-			if (inputIsError == -1) {
+			G_IntIsValidated("Enter the Joined Date(Days)", dayOfMonth[staff.joinedDate.month - 1], &staff.joinedDate.day)) {
+			if (inputIsError == ISERROR) {
 				return;
 			}
 			if (inputIsError == 1)  G_ErrorMessage();
@@ -1643,9 +1643,14 @@ void SI_addStaff() {
 	diffDate = 0;
 
 	//vadition get from member Information
-	printf("  Monthly salary: ");
-	scanf("%lf", &staff.salary);
-	rewind(stdin);
+	char tempSalary[11] = "";
+	do
+	{
+		printf("  Monthly salary: ");
+		scanf("%10[^\n]", &tempSalary);
+		rewind(stdin);
+	} while (MI_InputDetailsValidation(tempSalary, "topup") != 0);
+	staff.salary = atoi(tempSalary);
 	printf("\n");
 
 	fptr = fopen("staffs.txt", "a");
@@ -1685,13 +1690,13 @@ void SI_searchStaff() {
 	printf("\n\t< Search Staff >\n");
 	G_lineDesign();
 	printf("  Enter staff ID (Enter \'0000\' to exit):");
-	scanf("%[^\n]", &searchStaff);
+	scanf("%10[^\n]", &searchStaff);
 	rewind(stdin);
-	if (strncmp(searchStaff, "0000", 11)) return;
+	if (strncmp(searchStaff, "0000", 11) == 0) return;
 
 	for (int i = 0; i < r; i++)
 	{
-		if (strstr(staff[i].staffID, searchStaff))
+		if (strncmp(staff[i].staffID, searchStaff,11) == 0)
 		{
 			printf("  Staff ID	 : %s\n", staff[i].staffID);
 			printf("  Name		 : %s\n", staff[i].name);
@@ -1699,6 +1704,7 @@ void SI_searchStaff() {
 			printf("  Position	 : %s\n", staff[i].position);
 			printf("  Joined date(NO/ DDMMYY)    : %d/%d/%d\n", staff[i].joinedDate.day, staff[i].joinedDate.month, staff[i].joinedDate.year);
 			printf("  Salary	 : RM%.2f\n\n", staff[i].salary);
+			system("pause");
 			break;
 		}
 	}
@@ -1706,6 +1712,7 @@ void SI_searchStaff() {
 void SI_modifyStaff() {
 	Staff staff[20] = { 0 };
 	char searchStaff[11] = "";
+	char tempSalary[11] = "";
 	int decision, i = 0, r;
 	int inputIsError = 0;
 
@@ -1734,13 +1741,14 @@ void SI_modifyStaff() {
 	printf("\n\t< Modify Staff >\n");
 	G_lineDesign();
 	printf("  Enter staff ID (Enter \'0000\' to exit):");
-	scanf("%[^\n]", &searchStaff);
+	scanf("%10[^\n]", &searchStaff);
 	rewind(stdin);
-	if (strncmp(searchStaff, "0000", 11)) return;
+	if (strncmp(searchStaff, "0000", 11) == 0) return;
 
 	for (i = 0; i < r; i++) {
 		if (strcmp(searchStaff, staff[i].staffID) == 0) {
 			do {
+				if (inputIsError == ISERROR) return;
 				printf("\n\t< Modification - Staff >\n");
 				G_lineDesign();
 				printf("  1. Staff ID\n");
@@ -1755,19 +1763,19 @@ void SI_modifyStaff() {
 			switch (decision) {
 			case 1:
 				printf("  Modifying - Staff ID: ");
-				scanf("%[^\n]", &staff[i].staffID);
+				scanf("%10[^\n]", &staff[i].staffID);
 				break;
 			case 2:
 				printf("  Modifying - Name: ");
-				scanf("%[^\n]", &staff[i].name);
+				scanf("%19[^\n]", &staff[i].name);
 				break;
 			case 3:
 				printf("  Modifying - Password: ");
-				scanf("%[^\n]", &staff[i].password);
+				scanf("%29[^\n]", &staff[i].password);
 				break;
 			case 4:
 				printf("  Modifying - Position: ");
-				scanf("%[^\n]", &staff[i].position);
+				scanf("%19[^\n]", &staff[i].position);
 				break;
 			case 5:
 				do
@@ -1775,13 +1783,13 @@ void SI_modifyStaff() {
 					if (diffDate < 0) printf("Joined Date can\'t be before current date.\n");
 					//Joined Date (Year)
 					while (inputIsError =
-						G_IntIsValidated("Enter the Joined Date(DD/MM/\033[0;34mYYYY\033[0;37m)", currDate.year, &staff[i].joinedDate.year)) {
+						G_IntIsValidated("Enter the Joined Date(Years)", currDate.year, &staff[i].joinedDate.year)) {
 						if (inputIsError == 1)  G_ErrorMessage();
 					}
 
 					//Joined Date(Month)
 					while (inputIsError =
-						G_IntIsValidated("Enter the Joined Date(DD/\033[0;34mMM\033[0;37m/YYYY)", 12, &staff[i].joinedDate.month)) {
+						G_IntIsValidated("Enter the Joined Date(Months)", 12, &staff[i].joinedDate.month)) {
 						if (inputIsError == -1) {
 							return;
 						}
@@ -1793,7 +1801,7 @@ void SI_modifyStaff() {
 
 					//Joined Date(Day)
 					while (inputIsError =
-						G_IntIsValidated("Enter the Joined Date(\033[0;34mDD\033[0;37m/MM/YYYY)", dayOfMonth[staff[i].joinedDate.month - 1], &staff[i].joinedDate.day)) {
+						G_IntIsValidated("Enter the Joined Date(Days)", dayOfMonth[staff[i].joinedDate.month - 1], &staff[i].joinedDate.day)) {
 						if (inputIsError == -1) {
 							return;
 						}
@@ -1805,8 +1813,15 @@ void SI_modifyStaff() {
 				diffDate = 0;
 				break;
 			case 6:
-				printf("  Modifying - Salary: ");
-				scanf("%lf", &staff[i].salary);
+				
+				do
+				{
+					printf("  Monthly salary: ");
+					scanf("%10[^\n]", &tempSalary);
+					rewind(stdin);
+				} while (MI_InputDetailsValidation(tempSalary, "topup") != 0);
+				staff[i].salary = atoi(tempSalary);
+				printf("\n");
 				break;
 			}
 			rewind(stdin);
@@ -1833,7 +1848,7 @@ void SI_modifyStaff() {
 }
 void SI_displayStaff() {
 	Staff staff = { 0 };
-	char searchStaff[10] = "";
+	char searchStaff[11] = "";
 	int r;
 	FILE* fptr = fopen("staffs.txt", "r");
 	if (!fptr) {
@@ -1855,9 +1870,10 @@ void SI_displayStaff() {
 	}
 	fclose(fptr);
 	printf("\n  Number of records: %d\n", r);
+	system("pause");
 }
 void SI_deleteStaff() {
-	char staffDel[10] = "";
+	char staffDel[11] = "";
 	Staff staff[20] = { 0 };
 	int i = 0;
 
@@ -1870,24 +1886,25 @@ void SI_deleteStaff() {
 
 	for (i = 0;
 		fscanf(fptr, "%[^|]|%[^|]|%[^|]|%[^|]|%d/%d/%d|%lf\n",
-			staff[i].staffID, &staff[i].name, &staff[i].password, &staff[i].position,
+			&staff[i].staffID, &staff[i].name, &staff[i].password, &staff[i].position,
 			&staff[i].joinedDate.day, &staff[i].joinedDate.month, &staff[i].joinedDate.year,
 			&staff[i].salary) != EOF; i++);
 	fclose(fptr);
 
-	printf("  + - - - - - - - - - - - - - - - - +\n");
-	printf("  | Staff Existing ID:		    |\n");
+	printf("+ - - - - - - - - - - +\n");
+	printf("|%-21s|\n","Staff Existing ID:");
 	for (int j = 0; j < i; j++)
 	{
-		printf("  | %s		            |\n", staff[i].staffID);
+		printf("|%-21s|\n", staff[j].staffID);
 	}
-	printf("  + - - - - - - - - - - - - - - - - +\n\n");
+	printf("+ - - - - - - - - - - +\n\n");
 
 
 
-	printf("Which Data do you wish to delete ? : ");
-	scanf(" %[^\n]", &staffDel);
+	printf("Which Data do you wish to delete (Enter \'0000\' to exit) :");
+	scanf("%10[^\n]", &staffDel);
 	rewind(stdin);
+	if (strncmp(staffDel, "0000", 11) == 0) return;
 	int currentRe = i;
 
 	//two for loop
