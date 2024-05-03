@@ -6,7 +6,8 @@
 #include <Windows.h>
 #define ISERROR -1
 #pragma warning(disable:4996)
-
+//jeremycjc
+//chin123lol
 typedef char* string;
 
 typedef struct {
@@ -89,7 +90,6 @@ int G_ConfirmationIsValidated(string prompt);
 int G_IntIsValidated(string prompt, int range, int* output);
 void G_ErrorMessage();
 int G_GetTxtFileNumRow(string fileName);
-int G_MenuValidation(string decision, int range);
 Time G_GetTime(string prompt);
 
 //Menu
@@ -138,7 +138,6 @@ void SI_displayStaff();
 void SI_deleteStaff();
 
 //Member Information
-Date MI_getDate();
 void MI_shiftSpace(int MI_position);
 void MI_drawTrain();
 
@@ -176,7 +175,7 @@ void MI_ErrorMessageForInputLength(int min, int max);
 
 //Function 
 int main() {
-	MI_drawTrain();
+	//MI_drawTrain();
 	while (G_systemMenu());
 	return 0;
 }
@@ -1134,7 +1133,7 @@ void TS_addSchedule() {
 		printf("Enter the Departure Station (Enter \'0000\' to exit):");
 		rewind(stdin);
 		scanf("%[^\n]", &train.departureStation);
-		if (strncmp(train.departureStation, "0000", 50)) {
+		if (strncmp(train.departureStation, "0000", 50) == 0) {
 			fclose(fptr);
 			return;
 		}
@@ -1143,40 +1142,42 @@ void TS_addSchedule() {
 		printf("Enter the Arrival Station (Enter \'0000\' to exit):");
 		rewind(stdin);
 		scanf("%[^\n]", &train.arrivalStation);
-		if (strncmp(train.arrivalStation, "0000", 50)) {
+		if (strncmp(train.arrivalStation, "0000", 50) == 0) {
 			fclose(fptr);
 			return;
 		}
 
 		//Departure Time
 		train.departureTime = G_GetTime("Departure Time");
-		if (train.departureTime.hour == -1) {
+		if (train.departureTime.hour == ISERROR) {
 			fclose(fptr);
 			return;
 		}
 
 		//Arrival Time
 		train.arrivalTime = G_GetTime("Departure Time");
-		if (train.arrivalTime.hour == -1) {
+		if (train.arrivalTime.hour == ISERROR) {
 			fclose(fptr);
 			return;
 		}
 
 		//Available Seat
 		do {
-			if (inputIsError == -1) {
+			if (inputIsError == ISERROR) {
 				fclose(fptr);
 				return;
 			}
 			if (inputIsError == 1)  G_ErrorMessage();
+			system("cls");
 		} while (inputIsError =
 			G_IntIsValidated("Enter the number of Coach(each coach contains 40 seat, maximum 5 coach)", 5, &train.availableSeat));
 
 		//Departure Date
 		do
 		{
+			system("cls");
 			if (diffDate < 0) printf("Departure Date can\'t be before current date.\n");
-
+			
 			//Departure Date (Year)
 			while (inputIsError =
 				G_IntIsValidated("Enter the Departure Date(DD/MM/\033[0;34mYYYY\033[0;37m)", currDate.year, &train.departureDate.year)) {
@@ -2045,7 +2046,7 @@ void MI_registerMember() {
 	} while (MI_InputDetailsValidation(newMember.memberPhoneNo, "phoneNo") != 0);
 
 	printf("\n\n");
-	newMember.memberJoinDate = MI_getDate();
+	newMember.memberJoinDate = G_GetCurrentDate();
 	newMember.memberRewards = 0;
 	newMember.memberWallet = 0;
 
@@ -2131,8 +2132,9 @@ int MI_verifyLogin(string inputID, string inputPass) {
 	return 1;
 }
 void MI_topUpWallet(string memberID) {
-	char tempWallet[11];
-	double tempWallet2;
+	char tempWallet[11] = "";
+	char *endptr;
+	double tempWallet2 = 0;
 	int numOfMembers = MI_getNumberOfMembers();
 	Member* allMembers = MI_getMemberDetails(numOfMembers);
 	Member newDetails = { 0 };
@@ -2145,8 +2147,8 @@ void MI_topUpWallet(string memberID) {
 				scanf("%s", &tempWallet);
 				rewind(stdin);
 			} while (MI_InputDetailsValidation(tempWallet, "topUp") != 0);
-			strtod(tempWallet, &tempWallet2);
-			tempWallet2 = tempWallet2 + allMembers[i].memberWallet;
+			tempWallet2 = strtod(tempWallet, &endptr);
+			tempWallet2 += allMembers[i].memberWallet;
 			printf("\n\nWallet amount after top up: %.2lf\n\n", tempWallet2);
 			system("pause");
 			strcpy(newDetails.memberID, memberID);
@@ -2195,7 +2197,7 @@ void MI_MemberEditDetails(string memberID) {
 	printf("Current details: \n\n");
 	MI_displayDetails(memberID);
 
-	Member newDetails;
+	Member newDetails = { 0 };
 	int verify;
 	int validation = 0;
 	char tempPass[11] = "", confirmPass[11] = "";
@@ -2368,18 +2370,7 @@ void MI_drawTrain() {
 	}
 	printf("\n\n\n");
 }
-Date MI_getDate() {
-	Date MI_currentDate;
 
-	SYSTEMTIME t;
-	GetLocalTime(&t);
-
-	MI_currentDate.day = t.wDay;
-	MI_currentDate.month = t.wMonth;
-	MI_currentDate.year = t.wYear;
-
-	return MI_currentDate;
-}
 void MI_shiftSpace(int MI_position) {
 	for (int i = 0; i < MI_position; i++) {
 		printf(" ");
@@ -2419,7 +2410,6 @@ string MI_getPassword() {
 void MI_ErrorMessageForInputLength(int min, int max) {
 	//for input data length (strlen)
 	printf("\n\nInput format wrong. Please enter at least %d, maximum %d characters only.\n\n", min, max);
-
 };
 int MI_InputDetailsValidation(string value, string mode) {
 	//to check memberID or Pass to follow format
@@ -2541,24 +2531,23 @@ int MI_InputDetailsValidation(string value, string mode) {
 	}
 	else if (strcmp(mode, "topUp") == 0) {
 		//check topup amount format
-		for (int i = 0; i < strlen(value); i++) {
-
-			if (isdigit(value[i]) != 0) {
-				if (value[i] != '.') {
-
-					printf("\n\nYour top up value has invalid input (character/symbol). Please re-enter again.\n\n");
-					system("pause");
+		int dotCount = 0;
+		for (int i = 0; i < strlen(value[i]); i++) {
+			if (!isdigit(value[i])) {
+				if (value[i] == '.') {
+					dotCount++;
+					// Check only one dot is present
+					if (dotCount > 1)
+						return 1;
+				}
+				else {
 					return 1;
-				};
-			};
-
-		};
+				}
+			}
+		}
 		return 0;
 	}
-
-
-	return 0;
-
+	return 1;
 };
 
 /*for admin use*/ void MI_displayAllMembers() {
@@ -2772,7 +2761,7 @@ int MI_InputDetailsValidation(string value, string mode) {
 };
 /*for admin use*/ void MI_staffAddMember() {
 
-	Member newMember;
+	Member newMember = { 0 };
 	int verify;
 	char tempPass[11] = "", confirmPass[11] = "";
 
@@ -2828,7 +2817,7 @@ int MI_InputDetailsValidation(string value, string mode) {
 		} while (MI_InputDetailsValidation(newMember.memberPhoneNo, "phoneNo") != 0);
 
 
-		newMember.memberJoinDate = MI_getDate();
+		newMember.memberJoinDate = G_GetCurrentDate();
 		char tempReward[10];
 		do {
 			printf("\n\nPlease enter new member's reward points: ");
@@ -2911,7 +2900,7 @@ int MI_InputDetailsValidation(string value, string mode) {
 		} while (MI_InputDetailsValidation(tempID, "idOrPass") != 0);
 		MI_displayDetails(tempID);
 
-		Member newDetails;
+		Member newDetails = { 0 };
 		int verify;
 		char tempPass[11], confirmPass[11], tempYear[5], tempMonth[3], tempDay[3], tempReward[10];
 		for (int i = 0; i < numOfMembers; i++) {
@@ -3135,6 +3124,8 @@ int TS_mainMenu() {
 	do
 	{
 		if (inputIsError == ISERROR) return 0;
+		if (inputIsError == 1) G_ErrorMessage();
+		system("cls");
 		printf("=====================================================\n");
 		printf("1.Show train schedule\n");
 		printf("2.Add train schedule\n");
