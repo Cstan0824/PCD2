@@ -14,12 +14,12 @@ typedef struct {
 	int day;
 	int month;
 	int year;
-} Date;
+}Date;
 
 typedef struct {
 	int hour;
 	int min;
-} Time;
+}Time;
 
 typedef struct {
 	char trainID[10]; //user input
@@ -27,7 +27,7 @@ typedef struct {
 	int seatType; // 50% Standard[1] : 20% Premium[2] : 20% Sleeping Berths[3] : 10% Special Needs Seats[4](For Child/Seniors)
 	char coach; //
 	double price; //auto calculate
-} Ticket;
+}Ticket;
 
 typedef struct {
 	char bookingID[10];
@@ -35,7 +35,7 @@ typedef struct {
 	Date bookingDate;
 	Ticket ticketDetails;
 	int isCancelled;
-} Booking;
+}Booking;
 
 typedef struct {
 	char trainID[10];
@@ -54,7 +54,7 @@ typedef struct {
 	const string desc;
 	int minRequired;
 	int maxLimits;
-} Package;
+}Package;
 
 typedef struct {
 	char memberID[11];
@@ -74,6 +74,15 @@ typedef struct {
 	double salary;
 }Staff;
 
+typedef struct {
+	char memberID[11];
+	char memberPass[11];
+	char memberName[50];
+	char memberPhoneNo[12];
+	char memberJoinDate[11];
+	char memberRewards[10];
+	char memberWallet[10];
+} ValidateTxt;
 int isAdmin = 0;
 Member loggedInMember = { 0 };
 
@@ -98,6 +107,7 @@ int TB_mainMenu();
 int TS_mainMenu();
 int SI_mainMenu();
 int MI_mainMenu();
+
 //Booking Ticket
 //Read
 void TB_DisplayBookingRecord(string searchFilter);
@@ -125,7 +135,7 @@ void TB_CancelBooking(TrainSchedule trainSchedule);
 //Train Schedule
 TrainSchedule* TS_GetTrainSchedule(string trainID);
 void TS_addSchedule();
-void TS_searchSchedule();
+void TS_serachSchedule();
 void TS_modifySchedule();
 void TS_deleteSchedule();
 void TS_displaySchedule();
@@ -165,14 +175,16 @@ int MI_InputDetailsValidation(string value, string mode);
 void MI_ErrorMessageForInputLength(int min, int max);
 
 //Admin Functions
-/*for staff use*/ void MI_displayAllMembers();
-/*for staff use*/ void MI_displayMembersHeaderOrFooter(char HeaderOrFooter);
-/*for staff use*/ void MI_staffSearchMember();
-/*for staff use*/ void MI_displaySearchedMembers(string memberID);
-/*for staff use*/ void MI_staffDeleteMember();
-/*for staff use*/ void MI_staffEditMemberDetails();
-/*for staff use*/ void MI_staffAddMember();
-
+/*for admin use*/ void MI_displayAllMembers();
+/*for admin use*/ void MI_displayMembersHeaderOrFooter(char HeaderOrFooter);
+/*for admin use*/ void MI_staffSearchMember();
+/*for admin use*/ void MI_displaySearchedMembers(string memberID);
+/*for admin use*/ void MI_staffDeleteMember();
+/*for admin use*/ void MI_staffEditMemberDetails();
+/*for admin use*/ void MI_staffAddMember();
+/*for admin use*/ void MI_staffAddMemberViaTxt();
+/*for admin use*/ int NewMemberIsValidated(const ValidateTxt* member);
+/*for admin use*/ void AddMemberViaTxtFileProcess(const char* fileName);
 //Function 
 int main() {
 	//MI_drawTrain();
@@ -188,10 +200,10 @@ Date G_GetCurrentDate() {
 	return date;
 }
 int G_CalDiffDate(Date date, Date dateToCmp) {
-	return
-		(date.year * 365 + date.month * 30 + date.day)
-		-
-		(dateToCmp.year * 365 + dateToCmp.month * 30 + dateToCmp.day);
+	return 
+			(date.year * 365 + date.month * 30 + date.day)
+			-
+			(dateToCmp.year * 365 + dateToCmp.month * 30 + dateToCmp.day);
 }
 Time G_GetCurrentTime() {
 	//printf("Audit Log : Time G_GetCurrentTime()\n");
@@ -246,8 +258,8 @@ int G_ConfirmationIsValidated(string prompt) {
 }
 int G_IntIsValidated(string prompt, int range, int* output) {
 	char digit[3] = "";
-	char decision[1000] = "";
-	printf("\n%s ['0' to return to previous page]: ", prompt);
+	char decision[3] = "";
+	printf("%s  [ENTER '0' to escape] >>", prompt);
 	scanf("%[^\n]", &decision);
 	rewind(stdin);
 
@@ -302,7 +314,7 @@ Time G_GetTime(string prompt) {
 
 	//Time (Hour)
 	while (inputIsError) {
-		printf("Enter %s (\033[0;34mHH\033[0;37m:MM) [ENTER \'-1\' to escape] >>", prompt);
+		printf("Enter %s (Hours) [ENTER \'-1\' to escape] >>", prompt);
 		scanf("%[^\n]", &decision);
 		rewind(stdin);
 
@@ -311,6 +323,7 @@ Time G_GetTime(string prompt) {
 		for (int i = 0; i < 24; i++) {
 			sprintf(digit, "%d", i);
 			if (strncmp(decision, digit, 3) == 0) {
+				tempTime.hour = i;
 				inputIsError = 0;
 				break;
 			}
@@ -321,7 +334,7 @@ Time G_GetTime(string prompt) {
 	inputIsError = 1;
 	//Time (Minute)
 	while (inputIsError) {
-		printf("Enter %s (HH:\033[0;34mMM\033[0;37m) [ENTER \'-1\' to escape] >>", prompt);
+		printf("Enter %s (Minutes) [ENTER \'-1\' to escape] >>", prompt);
 		scanf("%[^\n]", &decision);
 		rewind(stdin);
 
@@ -330,6 +343,7 @@ Time G_GetTime(string prompt) {
 		for (int i = 0; i < 60; i++) {
 			sprintf(digit, "%d", i);
 			if (strncmp(decision, digit, 3) == 0) {
+				tempTime.min = i;
 				inputIsError = 0;
 				break;
 			}
@@ -1086,9 +1100,8 @@ void TS_displaySchedule() {
 	}
 
 	//testing
-	printf("%-10s", "Train ID");
 	printf("Train ID      Departure Station                Arrival Station             Departure Time   Arrival Time  Available Seats  Departure Date\n");
-	printf("===================================================================================================================================================\n");
+	printf("===============================================================================================================================================\n");
 	while (fscanf(fptr, "%[^|]|%[^|]|%[^|]|%02d:%02d|%02d:%02d|%d|%02d/%02d/%04d|%d\n",
 		&train.trainID, &train.departureStation, &train.arrivalStation,
 		&train.departureTime.hour, &train.departureTime.min,
@@ -1104,10 +1117,10 @@ void TS_displaySchedule() {
 				train.arrivalTime.hour, train.arrivalTime.min,
 				train.availableSeat,
 				train.departureDate.day, train.departureDate.month, train.departureDate.year);
+			count++;
 		}
-		count++;
 	}
-	printf("\n\nTotal %d record in train schedule.\n\n", count);
+	printf("Total %d record in train schedule", count);
 	fclose(fptr);
 	system("pause");
 }
@@ -1131,8 +1144,8 @@ void TS_addSchedule() {
 	do {
 		//Departure Station
 		printf("Enter the Departure Station (Enter \'0000\' to exit):");
-		rewind(stdin);
 		scanf("%[^\n]", &train.departureStation);
+		rewind(stdin);
 		if (strncmp(train.departureStation, "0000", 50) == 0) {
 			fclose(fptr);
 			return;
@@ -1140,12 +1153,13 @@ void TS_addSchedule() {
 
 		//Arrival Station
 		printf("Enter the Arrival Station (Enter \'0000\' to exit):");
-		rewind(stdin);
 		scanf("%[^\n]", &train.arrivalStation);
+		rewind(stdin);
 		if (strncmp(train.arrivalStation, "0000", 50) == 0) {
 			fclose(fptr);
 			return;
 		}
+		
 
 		//Departure Time
 		train.departureTime = G_GetTime("Departure Time");
@@ -1177,10 +1191,10 @@ void TS_addSchedule() {
 		{
 			system("cls");
 			if (diffDate < 0) printf("Departure Date can\'t be before current date.\n");
-
+			
 			//Departure Date (Year)
 			while (inputIsError =
-				G_IntIsValidated("Enter the Departure Date(DD/MM/\033[0;34mYYYY\033[0;37m)", currDate.year, &train.departureDate.year)) {
+				G_IntIsValidated("Enter the Departure Date(Years)", currDate.year, &train.departureDate.year)) {
 				if (inputIsError == -1) {
 					fclose(fptr);
 					return;
@@ -1190,7 +1204,7 @@ void TS_addSchedule() {
 
 			//Departure Date(Month)
 			while (inputIsError =
-				G_IntIsValidated("Enter the Departure Date(DD/\033[0;34mMM\033[0;37m/YYYY)", 12, &train.departureDate.month)) {
+				G_IntIsValidated("Enter the Departure Date(Months)", 12, &train.departureDate.month)) {
 				if (inputIsError == -1) {
 					fclose(fptr);
 					return;
@@ -1203,7 +1217,7 @@ void TS_addSchedule() {
 
 			//Departure Date(Day)
 			while (inputIsError =
-				G_IntIsValidated("Enter the Departure Date(\033[0;34mDD\033[0;37m/MM/YYYY)", dayOfMonth[train.departureDate.month - 1], &train.departureDate.day)) {
+				G_IntIsValidated("Enter the Departure Date(Day)", dayOfMonth[train.departureDate.month - 1], &train.departureDate.day)) {
 				if (inputIsError == -1) {
 					fclose(fptr);
 					return;
@@ -1230,7 +1244,7 @@ void TS_addSchedule() {
 	fclose(fptr);
 	system("pause");
 }
-void TS_searchSchedule() {
+void TS_serachSchedule() {
 	int count = 0;
 	char searchArrivalStation[50] = "";
 	int isFound = 0;
@@ -1284,7 +1298,7 @@ void TS_searchSchedule() {
 	fclose(fptr);
 
 	if (G_ConfirmationIsValidated("Do you want to continue to search?")) {
-		TS_searchSchedule();
+		TS_serachSchedule();
 	}
 }
 void TS_deleteSchedule() {
@@ -1314,7 +1328,7 @@ void TS_deleteSchedule() {
 		inputIsError = 1;
 		printf("Please enter the train ID you want to delete:");
 		scanf("%[^\n]", &TrainID);
-
+		rewind(stdin);
 		for (int i = 0; i < trainCount; i++) {
 			if (strncmp(TrainID, train[i].trainID, 10) == 0 && train[i].isCancelled == 0)
 			{
@@ -1358,16 +1372,6 @@ void TS_modifySchedule() {
 	char trainID[10] = "";
 	int found = 0, trainCount = 0, count = 0;
 	int inputIsError = 0;
-
-	const char* color[] =
-	{
-		"\033[0;37m", // White[0]  
-		"\033[0;32m", // Green[1] 
-		"\033[0;33m", // Yellow[2]  
-		"\033[0;34m", // Blue[3]
-		"\033[0;31m", // Red[4]  
-		"\033[1;36m" // Bright Cyan[5]
-	};
 
 	int dayOfMonth[12] = { 31,29,31,30,31,30,31,31,30,31,30,31 };
 	Date currDate = G_GetCurrentDate();
@@ -1420,17 +1424,17 @@ void TS_modifySchedule() {
 
 			//Departure Station
 			printf("Enter the Departure Station (Enter \'0000\' to exit):");
-			rewind(stdin);
 			scanf("%[^\n]", &tempTrainSchedule.departureStation);
-			if (strncmp(tempTrainSchedule.departureStation, "0000", 50)) {
+			rewind(stdin);
+			if (strncmp(tempTrainSchedule.departureStation, "0000", 50) == 0) {
 				return;
 			}
 
 			//Arrival Station
 			printf("Enter the Arrival Station (Enter \'0000\' to exit):");
-			rewind(stdin);
 			scanf("%[^\n]", &tempTrainSchedule.arrivalStation);
-			if (strncmp(tempTrainSchedule.arrivalStation, "0000", 50)) {
+			rewind(stdin);
+			if (strncmp(tempTrainSchedule.arrivalStation, "0000", 50) == 0) {
 				return;
 			}
 
@@ -1462,7 +1466,7 @@ void TS_modifySchedule() {
 
 				//Departure Date (Year)
 				while (inputIsError =
-					G_IntIsValidated("Enter the Departure Date(DD/MM/\033[0;34mYYYY\033[0;37m)", currDate.year, &tempTrainSchedule.departureDate.year)) {
+					G_IntIsValidated("Enter the Departure Date(Years)", currDate.year, &tempTrainSchedule.departureDate.year)) {
 					if (inputIsError == -1) {
 						return;
 					}
@@ -1471,7 +1475,7 @@ void TS_modifySchedule() {
 
 				//Departure Date(Month)
 				while (inputIsError =
-					G_IntIsValidated("Enter the Departure Date(DD/\033[0;34mMM\033[0;37m/YYYY)", 12, &tempTrainSchedule.departureDate.month)) {
+					G_IntIsValidated("Enter the Departure Date(Months)", 12, &tempTrainSchedule.departureDate.month)) {
 					if (inputIsError == -1) {
 						return;
 					}
@@ -1483,7 +1487,7 @@ void TS_modifySchedule() {
 
 				//Departure Date(Day)
 				while (inputIsError =
-					G_IntIsValidated("Enter the Departure Date(\033[0;34mDD\033[0;37m/MM/YYYY)",
+					G_IntIsValidated("Enter the Departure Date(Days)",
 						dayOfMonth[tempTrainSchedule.departureDate.month - 1], &tempTrainSchedule.departureDate.day)) {
 					if (inputIsError == -1) {
 						return;
@@ -2099,7 +2103,7 @@ void MI_memberLogin() {
 			printf("Wrong ID or password.\n");
 		}
 	} while (verify != 0);
-
+	
 	if (verify == 0) {
 		MI_loggedInMemberDetails(inputID);
 		while (MI_mainMenu());
@@ -2133,7 +2137,7 @@ int MI_verifyLogin(string inputID, string inputPass) {
 }
 void MI_topUpWallet(string memberID) {
 	char tempWallet[11] = "";
-	char* endptr;
+	char *endptr;
 	double tempWallet2 = 0;
 	int numOfMembers = MI_getNumberOfMembers();
 	Member* allMembers = MI_getMemberDetails(numOfMembers);
@@ -2550,7 +2554,7 @@ int MI_InputDetailsValidation(string value, string mode) {
 	return 1;
 };
 
-/*for staff use*/ void MI_displayAllMembers() {
+/*for admin use*/ void MI_displayAllMembers() {
 
 	int numOfMembers = MI_getNumberOfMembers();
 	Member* allMembers = MI_getMemberDetails(numOfMembers);
@@ -2581,7 +2585,7 @@ int MI_InputDetailsValidation(string value, string mode) {
 	free(allMembers);
 
 };
-/*for staff use*/ void MI_displayMembersHeaderOrFooter(char HeaderOrFooter) {
+/*for admin use*/ void MI_displayMembersHeaderOrFooter(char HeaderOrFooter) {
 
 	if (HeaderOrFooter == 'H') {
 		for (int i = 0; i < 146; i++) {
@@ -2604,7 +2608,7 @@ int MI_InputDetailsValidation(string value, string mode) {
 	}
 
 };
-/*for staff use*/ void MI_displaySearchedMembers(string memberID) {
+/*for admin use*/ void MI_displaySearchedMembers(string memberID) {
 	int numOfMembers = MI_getNumberOfMembers();
 	Member* allMembers = MI_getMemberDetails(numOfMembers);
 
@@ -2637,7 +2641,7 @@ int MI_InputDetailsValidation(string value, string mode) {
 
 
 };
-/*for staff use*/ void MI_staffSearchMember() {
+/*for admin use*/ void MI_staffSearchMember() {
 	int MI_searchYear, MI_searchMonth, MI_searchDay;
 	char MI_searchID[11], MI_searchName[50];
 	int numOfMembers = MI_getNumberOfMembers();
@@ -2759,7 +2763,7 @@ int MI_InputDetailsValidation(string value, string mode) {
 	} while (G_ConfirmationIsValidated("Do you want to continue search for members? (Y/N)") == 1);
 	free(allMembers);
 };
-/*for staff use*/ void MI_staffAddMember() {
+/*for admin use*/ void MI_staffAddMember() {
 
 	Member newMember = { 0 };
 	int verify;
@@ -2843,7 +2847,7 @@ int MI_InputDetailsValidation(string value, string mode) {
 		system("cls");
 	} while (G_ConfirmationIsValidated("Do you want to add more members? (Y/N): ") == 1);
 };
-/*for staff use*/ void MI_staffDeleteMember() {
+/*for admin use*/ void MI_staffDeleteMember() {
 	char tempID[11] = "";
 	int numOfMembers = MI_getNumberOfMembers();
 	Member* allMembers = MI_getMemberDetails(numOfMembers);
@@ -2887,7 +2891,7 @@ int MI_InputDetailsValidation(string value, string mode) {
 	free(allMembers);
 
 }
-/*for staff use*/ void MI_staffEditMemberDetails() {
+/*for admin use*/ void MI_staffEditMemberDetails() {
 	char tempID[11];
 	int numOfMembers = MI_getNumberOfMembers();
 	Member* allMembers = MI_getMemberDetails(numOfMembers);
@@ -3056,6 +3060,167 @@ int MI_InputDetailsValidation(string value, string mode) {
 	} while (G_ConfirmationIsValidated("Do you want to edit more members? (Y/N): ") == 1);
 	free(allMembers);
 };
+/*for admin use*/ void MI_staffAddMemberViaTxt() {
+	char fileName[100];
+	do {
+		system("cls");
+		printf("Enter File Name: ");
+		scanf("%s", &fileName);
+		rewind(stdin);
+
+		AddMemberViaTxtFileProcess(fileName);
+
+
+	} while (G_ConfirmationIsValidated("Do you want to add more members via txt file? (Y/N): "));
+};
+/*for admin use*/ int NewMemberIsValidated(const ValidateTxt* member) {
+	// Check memberID length
+	if (!(strlen(member->memberID) >= 7 && strlen(member->memberID) <= 10))
+		return 0;
+
+	// Check memberPass length
+	if (!(strlen(member->memberPass) >= 7 && strlen(member->memberPass) <= 10))
+		return 0;
+
+	// Check memberName length and characters
+	if (strlen(member->memberName) < 2 || strlen(member->memberName) > 50)
+		return 0;
+
+	for (int i = 0; member->memberName[i]; i++) {
+		if (!isalpha(member->memberName[i]) && member->memberName[i] != ' ')
+			return 0;
+	}
+
+	// Check memberPhoneNo length and digits
+	if (strlen(member->memberPhoneNo) < 10 || strlen(member->memberPhoneNo) > 11)
+		return 0;
+
+	for (int i = 0; member->memberPhoneNo[i]; i++) {
+		if (!isdigit(member->memberPhoneNo[i]))
+			return 0;
+	}
+
+	//Check join date
+	if (!(strlen(member->memberJoinDate) == 10)) {
+		return 0;
+	}
+	else {
+		char tempDay[3] = "", tempMonth[3] = "", tempYear[5] = "";
+		sscanf(member->memberJoinDate, "%s %s %s", tempDay, tempMonth, tempYear);
+		//check length of date
+		if (!((strlen(tempYear) == 4) && (strlen(tempMonth) == 2) && (strlen(tempDay) == 2))) {
+			return 0;
+		}
+		//check date format
+		for (int i = 0; tempYear[i]; i++) {
+			if (!isdigit(tempYear[i]))
+				return 0;
+		}
+		for (int i = 0; tempMonth[i]; i++) {
+			if (!isdigit(tempMonth[i]))
+				return 0;
+		}
+		//check validity of month
+		if (!(((atoi(tempMonth)) >= 1) && ((atoi(tempMonth)) <= 12))) {
+			return 0;
+		}
+		int dayOfMonth[12] = { 31,29,31,30,31,30,31,31,30,31,30,31 };
+		for (int i = 0; tempDay[i]; i++) {
+			if (!isdigit(tempDay[i]))
+				return 0;
+		}
+		dayOfMonth[1] = (atoi(tempYear) % 4 + 28);
+		//check validity of day based on month
+		if (!((atoi(tempDay) <= dayOfMonth[atoi(tempMonth) - 1]) && (atoi(tempDay) > 0))) {
+			return 0;
+		}
+
+	}
+
+	//check member rewards length and format
+	for (int i = 0; i < strlen(member->memberRewards); i++) {
+
+		if (!(isdigit(member->memberRewards[i]))) {
+			return 0;
+		};
+	}
+	//check topup amount length and format
+
+	int dotCount = 0;
+	for (int i = 0; i < strlen(member->memberRewards[i]); i++) {
+		if (!isdigit(member->memberRewards[i])) {
+			if (member->memberRewards[i] == '.') {
+				dotCount++;
+				// Check only one dot is present
+				if (dotCount > 1)
+					return 0;
+			}
+			else {
+				return 0;
+			}
+		}
+	}
+
+	return 1;
+
+}
+/*for admin use*/ void AddMemberViaTxtFileProcess(const char* fileName) {
+	FILE* fptr = fopen(fileName, "r");
+	if (fptr == NULL) {
+		printf("\nError opening file.\n");
+		exit(-1);
+	}
+
+	FILE* fptr2 = fopen("member-details.bin", "ab");
+	if (fptr2 == NULL) {
+		printf("\nError opening file.\n");
+		fclose(fptr);
+		exit(-1);
+	}
+	int numOfMembers = MI_getNumberOfMembers();
+	Member* allMembers = MI_getMemberDetails(numOfMembers);
+
+	ValidateTxt validate;
+	Member newMembers;
+	while (fscanf(fptr, "%[^|]|%[^|]|%[^|]|%[^|]|%[^|]|%[^|]|%[^\n]\n",
+		&validate.memberID, &validate.memberPass, &validate.memberName, &validate.memberPhoneNo,
+		&validate.memberJoinDate, &validate.memberRewards, &validate.memberWallet) == 7) {
+		// Validation
+		if (NewMemberIsValidated(&validate)) {
+			// If all fields are valid
+			// Pass value into Member* struct
+			char tempDay[3] = "", tempMonth[3] = "", tempYear[5] = "";
+			sscanf(validate.memberJoinDate, "%s %s %s", tempDay, tempMonth, tempYear);
+			strcpy(newMembers.memberID, validate.memberID);
+			strcpy(newMembers.memberPass, validate.memberPass);
+			strcpy(newMembers.memberName, validate.memberName);
+			strcpy(newMembers.memberPhoneNo, validate.memberPhoneNo);
+			newMembers.memberJoinDate.day = atoi(tempDay);
+			newMembers.memberJoinDate.month = atoi(tempMonth);
+			newMembers.memberJoinDate.year = atoi(tempYear);
+			newMembers.memberRewards = atoi(validate.memberRewards);
+			newMembers.memberWallet = strtod(validate.memberWallet, NULL);
+
+			//write validated data into binary
+
+			int verify = MI_verifyRegister(newMembers.memberID);
+			if (verify == 1) {
+				printf("Member with member ID \"%s\" already existed.\n\n", newMembers.memberID);
+			}
+			else {
+				fwrite(&newMembers, sizeof(Member), 1, fptr2);
+				printf("Member %s has been validated registered successfully!\n\n", newMembers.memberName);
+			}
+
+		}
+		else {
+			printf("Validation failed for a member.\n");
+		}
+	}
+
+	fclose(fptr);
+	fclose(fptr2);
+}
 
 //System Menu
 int G_systemMenu()
@@ -3064,20 +3229,17 @@ int G_systemMenu()
 	int systemMenuDecision;
 	do {
 		if (inputIsError == ISERROR) exit(ISERROR);
-		
+		if (inputIsError == 1) G_ErrorMessage();
 
 
 		system("cls");
 		printf("Welcome to Train Ticketing System\n\n");
-		G_lineDesign();
 		printf("Choose your mode: \n");
-		G_lineDesign();
 		printf("1. Member Login\n");
 		printf("2. Member Register\n");
 		printf("3. Staff Login\n");
-		G_lineDesign();
 	} while (inputIsError =
-		G_IntIsValidated("Mode", 3, &systemMenuDecision));
+		G_IntIsValidated("Mode: ", 3, &systemMenuDecision));
 
 	switch (systemMenuDecision)
 	{
@@ -3106,8 +3268,8 @@ int SI_mainMenu() {
 		printf("2. Member Details Management\n");
 		printf("3. Train Schedule Management\n");
 		G_lineDesign();
-	} while (inputIsError =
-		G_IntIsValidated("Mode", 3, &staffInformationDecision));
+	} while (inputIsError = 
+		G_IntIsValidated("Mode: ", 3, &staffInformationDecision));
 	switch (staffInformationDecision) {
 	case 1:
 		while (G_staffAccountManagementMenu());
@@ -3123,7 +3285,7 @@ int SI_mainMenu() {
 }
 int TS_mainMenu() {
 	int trainScheduleDecision = 1;
-	int inputIsError = 1;
+	int inputIsError = 0;
 	do
 	{
 		if (inputIsError == ISERROR) return 0;
@@ -3135,8 +3297,8 @@ int TS_mainMenu() {
 		printf("3.Search train schedule\n");
 		printf("4.Delete schedule\n");
 		printf("5.Modify train schedule\n");
-	} while (inputIsError =
-		G_IntIsValidated("Mode", 5, &trainScheduleDecision));
+	} while (inputIsError = 
+		G_IntIsValidated("Mode: ", 5, &trainScheduleDecision));
 	switch (trainScheduleDecision) {
 	case 1:
 		TS_displaySchedule();
@@ -3145,7 +3307,7 @@ int TS_mainMenu() {
 		TS_addSchedule();
 		break;
 	case 3:
-		TS_searchSchedule();
+		TS_serachSchedule();
 		break;
 	case 4:
 		TS_deleteSchedule();
@@ -3221,7 +3383,7 @@ int MI_mainMenu() {
 		printf("3. View Train Schedule\n");
 
 	} while (inputIsError =
-		G_IntIsValidated("Mode", 3, &staffInformationDecision));
+		G_IntIsValidated("Mode: ", 3, &staffInformationDecision));
 
 	switch (staffInformationDecision) {
 	case 1:
@@ -3251,7 +3413,7 @@ int MI_mainMenuForStaff() {
 		printf("4. Edit Member Account\n");
 		printf("5. Delete Member Account\n");
 	} while (inputIsError =
-		G_IntIsValidated("Mode", 5, &mainMenuForStaffDecision));
+		G_IntIsValidated("Mode: ", 5, &mainMenuForStaffDecision));
 
 	switch (mainMenuForStaffDecision) {
 	case 1:
@@ -3283,8 +3445,8 @@ int G_memberDetailsManagementForStaffMenu() {
 		printf("1. Member\'s Details Management\n");
 		printf("2. Member\'s Booking Management\n");
 		G_lineDesign();
-	} while (inputIsError =
-		G_IntIsValidated("Mode", 2, &memberDetailsManagementDecision));
+	} while (inputIsError = 
+		G_IntIsValidated("Mode: ", 2, &memberDetailsManagementDecision));
 	switch (memberDetailsManagementDecision) {
 	case 1:
 		while (MI_mainMenuForStaff());
@@ -3310,8 +3472,8 @@ int G_staffAccountManagementMenu() {
 		printf("  4. Display Staff Details\n");
 		printf("  5. Delete Staff\n");
 		G_lineDesign();
-	} while (inputIsError =
-		G_IntIsValidated("Mode", 5, &staffAccountManagementMenuDecision));
+	} while (inputIsError = 
+		G_IntIsValidated("Mode: ", 5, &staffAccountManagementMenuDecision));
 	system("cls");
 	switch (staffAccountManagementMenuDecision) {
 	case 1:
@@ -3350,7 +3512,7 @@ int G_memberAccountManagementMenu() {
 		printf("2. Top up Ewallet\n");
 		printf("3. Delete Account\n"); // all related booking will be cancelled also
 	} while (inputIsError =
-		G_IntIsValidated("Mode", 3, &accountManagementMenuDecision));
+		G_IntIsValidated("Mode: ", 3, &accountManagementMenuDecision));
 	switch (accountManagementMenuDecision)
 	{
 	case 1:
