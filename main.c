@@ -67,14 +67,6 @@ typedef struct {
 } Member;
 
 typedef struct {
-	char staffID[11], name[20];
-	char password[30];
-	char position[20];
-	Date joinedDate;
-	double salary;
-}Staff;
-
-typedef struct {
 	char memberID[11];
 	char memberPass[11];
 	char memberName[50];
@@ -83,6 +75,16 @@ typedef struct {
 	char memberRewards[10];
 	char memberWallet[10];
 } ValidateTxt;
+
+typedef struct {
+	char staffID[11], name[20];
+	char password[30];
+	char position[20];
+	Date joinedDate;
+	double salary;
+}Staff;
+
+
 int isAdmin = 0;
 Member loggedInMember = { 0 };
 
@@ -101,6 +103,8 @@ void G_ErrorMessage();
 int G_GetTxtFileNumRow(string fileName);
 Time G_GetTime(string prompt);
 int G_CalDiffTime(Time time, Time timeToCmp);
+void G_shiftSpaceForDrawTrain(int G_position);
+void G_DrawTrain();
 
 //Menu
 int G_systemMenu();
@@ -148,10 +152,6 @@ void SI_modifyStaff();
 void SI_displayStaff();
 void SI_deleteStaff();
 
-//Member Information
-void MI_shiftSpace(int MI_position);
-void MI_drawTrain();
-
 //Get info from binary file
 int MI_getNumberOfMembers();
 Member* MI_getMemberDetails(int rows);
@@ -176,20 +176,22 @@ int MI_InputDetailsValidation(string value, string mode);
 void MI_ErrorMessageForInputLength(int min, int max);
 
 //Admin Functions
-/*for admin use*/ void MI_displayAllMembers();
-/*for admin use*/ void MI_displayMembersHeaderOrFooter(char HeaderOrFooter);
-/*for admin use*/ void MI_staffSearchMember();
-/*for admin use*/ void MI_displaySearchedMembers(string memberID);
-/*for admin use*/ void MI_staffDeleteMember();
-/*for admin use*/ void MI_staffEditMemberDetails();
-/*for admin use*/ void MI_staffAddMember();
-/*for admin use*/ void MI_staffAddMemberViaTxt();
-/*for admin use*/ int NewMemberIsValidated(const ValidateTxt* member);
-/*for admin use*/ void AddMemberViaTxtFileProcess(const char* fileName);
+/*for staff use*/ void MI_displayAllMembers();
+/*for staff use*/ void MI_displayMembersHeaderOrFooter(char HeaderOrFooter);
+/*for staff use*/ void MI_staffSearchMember();
+/*for staff use*/ void MI_displaySearchedMembers(string memberID);
+/*for staff use*/ void MI_staffDeleteMember();
+/*for staff use*/ void MI_staffEditMemberDetails();
+/*for staff use*/ void MI_staffAddMember();
+/*for staff use*/ void MI_staffAddMemberViaTxt();
+/*for staff use*/ int MI_NewMemberIsValidated(const ValidateTxt* member);
+/*for staff use*/ void MI_AddMemberViaTxtFileProcess(const char* fileName);
+/*for staff use*/ void MI_ConvertBinToTxt();
+
 //Function 
 int main() {
-	//MI_drawTrain();
-	while (G_systemMenu());
+
+	G_DrawTrain();
 	return 0;
 }
 
@@ -201,10 +203,10 @@ Date G_GetCurrentDate() {
 	return date;
 }
 int G_CalDiffDate(Date date, Date dateToCmp) {
-	return 
-			(date.year * 365 + date.month * 30 + date.day)
-			-
-			(dateToCmp.year * 365 + dateToCmp.month * 30 + dateToCmp.day);
+	return
+		(date.year * 365 + date.month * 30 + date.day)
+		-
+		(dateToCmp.year * 365 + dateToCmp.month * 30 + dateToCmp.day);
 }
 Time G_GetCurrentTime() {
 	//printf("Audit Log : Time G_GetCurrentTime()\n");
@@ -263,7 +265,7 @@ int G_ConfirmationIsValidated(string prompt) {
 int G_IntIsValidated(string prompt, int range, int* output) {
 	char digit[10] = "";
 	char decision[10] = "";
-	printf("%s  [ENTER '0' to escape] >>", prompt);
+	printf("%s  [ENTER '0' to return]: ", prompt);
 	scanf("%9[^\n]", &decision);
 	rewind(stdin);
 
@@ -355,6 +357,43 @@ Time G_GetTime(string prompt) {
 		if (inputIsError) G_ErrorMessage();
 	}
 	return tempTime;
+}
+void G_DrawTrain() {
+	int G_position = 0;
+	int G_maxPosition = 50;
+	for (int i = 0; i < G_maxPosition; i++) {
+		system("cls");
+		G_shiftSpaceForDrawTrain(G_position);
+		printf("      _____________   _____________   _____________   _______________________________________^^_\n");
+		G_shiftSpaceForDrawTrain(G_position);
+		printf("     |  ___   ___  |||  ___   ___  |||  ___   ___  |||  ___   ___   ___    ___ ___  |   __  ,----\\\\\n");
+		G_shiftSpaceForDrawTrain(G_position);
+		printf("    || |   | |   | ||| |   | |   | ||| |   | |   | ||| |   | |   | |   |  |   |   | |  |  | |     \\\\\n");
+		G_shiftSpaceForDrawTrain(G_position);
+		printf("   ||| |   | |   | ||| |   | |   | ||| |   | |   | ||| |   | |   | |   |  |   |   | |  |  | |______\\\\\n");
+		G_shiftSpaceForDrawTrain(G_position);
+		printf("   ||| |___| |___| ||| |___| |___| ||| |___| |___| ||| |___| |___| |___|  | O | O | |  |  |         \\\\\n");
+		G_shiftSpaceForDrawTrain(G_position);
+		printf("   |||             |||             |||             |||                    |___|___| |  |__|           )\n");
+		G_shiftSpaceForDrawTrain(G_position);
+		printf("   |||_____________|||_____________|||_____________|||______________________________|_______________//\n");
+		G_shiftSpaceForDrawTrain(G_position);
+		printf("    ||             |||             |||             |||                                        /________\n");
+		G_shiftSpaceForDrawTrain(G_position);
+		printf("     '-------------'''-------------'''-------------'''---------------------------------------'\n");
+		G_shiftSpaceForDrawTrain(G_position);
+		printf("-=@==@==@=@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@=-\n");
+		G_shiftSpaceForDrawTrain(G_position);
+		printf("-=@==@==@=@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@=-\n");
+		G_position = (G_position + 1) % G_maxPosition;
+		Sleep(15);
+	}
+	printf("\n\n\n");
+}
+void G_shiftSpaceForDrawTrain(int G_position) {
+	for (int i = 0; i < G_position; i++) {
+		printf(" ");
+	}
 }
 
 //Booking Ticket
@@ -1195,7 +1234,7 @@ void TS_addSchedule() {
 		do
 		{
 			if (diffDate > 0) printf("Departure Date can\'t be before current date.\n");
-			
+
 			//Departure Date (Year)
 			while (inputIsError =
 				G_IntIsValidated("Enter the Departure Date(Years)", currDate.year, &train.departureDate.year)) {
@@ -1302,7 +1341,7 @@ void TS_serachSchedule() {
 	fclose(fptr);
 	system("pause");
 	system("cls");
-	if (G_ConfirmationIsValidated("Do you want to continue to search?")) {	
+	if (G_ConfirmationIsValidated("Do you want to continue to search?")) {
 		TS_serachSchedule();
 	}
 }
@@ -1334,7 +1373,7 @@ void TS_deleteSchedule() {
 		printf("Please enter the train ID you want to delete (Enter \'0000\' to exit): ");
 		scanf("%[^\n]", &TrainID);
 		if (strncmp(TrainID, "0000", 10) == 0) return;
-		
+
 		rewind(stdin);
 		for (int i = 0; i < trainCount; i++) {
 			if (strncmp(TrainID, train[i].trainID, 10) == 0 && train[i].isCancelled == 0)
@@ -1692,7 +1731,7 @@ void SI_searchStaff() {
 
 	for (int i = 0; i < r; i++)
 	{
-		if (strncmp(staff[i].staffID, searchStaff,11) == 0)
+		if (strncmp(staff[i].staffID, searchStaff, 11) == 0)
 		{
 			printf("  Staff ID	 : %s\n", staff[i].staffID);
 			printf("  Name		 : %s\n", staff[i].name);
@@ -1809,7 +1848,7 @@ void SI_modifyStaff() {
 				diffDate = 0;
 				break;
 			case 6:
-				
+
 				do
 				{
 					printf("  Monthly salary: ");
@@ -1888,7 +1927,7 @@ void SI_deleteStaff() {
 	fclose(fptr);
 
 	printf("+ - - - - - - - - - - +\n");
-	printf("|%-21s|\n","Staff Existing ID:");
+	printf("|%-21s|\n", "Staff Existing ID:");
 	for (int j = 0; j < i; j++)
 	{
 		printf("|%-21s|\n", staff[j].staffID);
@@ -2116,7 +2155,7 @@ void MI_memberLogin() {
 			printf("Wrong ID or password.\n");
 		}
 	} while (verify != 0);
-	
+
 	if (verify == 0) {
 		MI_loggedInMemberDetails(inputID);
 		while (MI_mainMenu());
@@ -2150,7 +2189,7 @@ int MI_verifyLogin(string inputID, string inputPass) {
 }
 void MI_topUpWallet(string memberID) {
 	char tempWallet[11] = "";
-	char *endptr;
+	char* endptr;
 	double tempWallet2 = 0;
 	int numOfMembers = MI_getNumberOfMembers();
 	Member* allMembers = MI_getMemberDetails(numOfMembers);
@@ -2361,38 +2400,6 @@ void MI_displayDetailsProcess(Member* allMembers, int rows, string memberID) {
 		}
 	}
 }
-void MI_drawTrain() {
-	int MI_position = 0;
-	int MI_maxPosition = 35;
-	for (int i = 0; i < MI_maxPosition; i++) {
-		system("cls");
-		MI_shiftSpace(MI_position);
-		printf("     _________________________________   _____________\n");
-		MI_shiftSpace(MI_position);
-		printf("    / _|_   _|_ \\ / _|_   _|_ \\ / _|_ \\ / / \\ / \\  __()\n");
-		MI_shiftSpace(MI_position);
-		printf("   | |   | |   | | |   | |   | | |   | |  \\_/ \\_/ |  \n");
-		MI_shiftSpace(MI_position);
-		printf("   | |   | |   | | |   | |   | | |   | | | _ _ _ ||\n");
-		MI_shiftSpace(MI_position);
-		printf("   | |_ _| |_ _| | |_ _| |_ _| | |_ _| | |/_\\_/_\\||___\n");
-		MI_shiftSpace(MI_position);
-		printf("    \\__|_____|__/_\\__|_____|__/_\\__|__/_\\____________/\n");
-		MI_shiftSpace(MI_position);
-		printf(" -=@=@==@=@==@==@==@==@==@==@==@==@==@==@==@==@==@==@=-\n");
-		MI_shiftSpace(MI_position);
-		printf(" -=@=@==@=@==@==@==@==@==@==@==@==@==@==@==@==@==@==@=-\n");
-		MI_position = (MI_position + 1) % MI_maxPosition;
-		Sleep(20);
-	}
-	printf("\n\n\n");
-}
-
-void MI_shiftSpace(int MI_position) {
-	for (int i = 0; i < MI_position; i++) {
-		printf(" ");
-	}
-}
 string MI_getPassword() {
 	int i = 0;
 	static char tempPass[11]; // Static array to persist after function returns
@@ -2567,7 +2574,7 @@ int MI_InputDetailsValidation(string value, string mode) {
 	return 1;
 };
 
-/*for admin use*/ void MI_displayAllMembers() {
+/*for staff use*/ void MI_displayAllMembers() {
 
 	int numOfMembers = MI_getNumberOfMembers();
 	Member* allMembers = MI_getMemberDetails(numOfMembers);
@@ -2598,7 +2605,7 @@ int MI_InputDetailsValidation(string value, string mode) {
 	free(allMembers);
 
 };
-/*for admin use*/ void MI_displayMembersHeaderOrFooter(char HeaderOrFooter) {
+/*for staff use*/ void MI_displayMembersHeaderOrFooter(char HeaderOrFooter) {
 
 	if (HeaderOrFooter == 'H') {
 		for (int i = 0; i < 146; i++) {
@@ -2621,7 +2628,7 @@ int MI_InputDetailsValidation(string value, string mode) {
 	}
 
 };
-/*for admin use*/ void MI_displaySearchedMembers(string memberID) {
+/*for staff use*/ void MI_displaySearchedMembers(string memberID) {
 	int numOfMembers = MI_getNumberOfMembers();
 	Member* allMembers = MI_getMemberDetails(numOfMembers);
 
@@ -2654,7 +2661,7 @@ int MI_InputDetailsValidation(string value, string mode) {
 
 
 };
-/*for admin use*/ void MI_staffSearchMember() {
+/*for staff use*/ void MI_staffSearchMember() {
 	int MI_searchYear, MI_searchMonth, MI_searchDay;
 	char MI_searchID[11], MI_searchName[50];
 	int numOfMembers = MI_getNumberOfMembers();
@@ -2776,7 +2783,7 @@ int MI_InputDetailsValidation(string value, string mode) {
 	} while (G_ConfirmationIsValidated("Do you want to continue search for members? (Y/N)") == 1);
 	free(allMembers);
 };
-/*for admin use*/ void MI_staffAddMember() {
+/*for staff use*/ void MI_staffAddMember() {
 
 	Member newMember = { 0 };
 	int verify;
@@ -2860,7 +2867,7 @@ int MI_InputDetailsValidation(string value, string mode) {
 		system("cls");
 	} while (G_ConfirmationIsValidated("Do you want to add more members? (Y/N): ") == 1);
 };
-/*for admin use*/ void MI_staffDeleteMember() {
+/*for staff use*/ void MI_staffDeleteMember() {
 	char tempID[11] = "";
 	int numOfMembers = MI_getNumberOfMembers();
 	Member* allMembers = MI_getMemberDetails(numOfMembers);
@@ -2904,7 +2911,7 @@ int MI_InputDetailsValidation(string value, string mode) {
 	free(allMembers);
 
 }
-/*for admin use*/ void MI_staffEditMemberDetails() {
+/*for staff use*/ void MI_staffEditMemberDetails() {
 	char tempID[11];
 	int numOfMembers = MI_getNumberOfMembers();
 	Member* allMembers = MI_getMemberDetails(numOfMembers);
@@ -3073,7 +3080,7 @@ int MI_InputDetailsValidation(string value, string mode) {
 	} while (G_ConfirmationIsValidated("Do you want to edit more members? (Y/N): ") == 1);
 	free(allMembers);
 };
-/*for admin use*/ void MI_staffAddMemberViaTxt() {
+/*for staff use*/ void MI_staffAddMemberViaTxt() {
 	char fileName[100];
 	do {
 		system("cls");
@@ -3081,12 +3088,12 @@ int MI_InputDetailsValidation(string value, string mode) {
 		scanf("%s", &fileName);
 		rewind(stdin);
 
-		AddMemberViaTxtFileProcess(fileName);
+		MI_AddMemberViaTxtFileProcess(fileName);
 
 
 	} while (G_ConfirmationIsValidated("Do you want to add more members via txt file? (Y/N): "));
 };
-/*for admin use*/ int NewMemberIsValidated(const ValidateTxt* member) {
+/*for admin use*/ int MI_NewMemberIsValidated(const ValidateTxt* member) {
 	// Check memberID length
 	if (!(strlen(member->memberID) >= 7 && strlen(member->memberID) <= 10))
 		return 0;
@@ -3160,9 +3167,9 @@ int MI_InputDetailsValidation(string value, string mode) {
 	//check topup amount length and format
 
 	int dotCount = 0;
-	for (int i = 0; i < strlen(member->memberRewards[i]); i++) {
-		if (!isdigit(member->memberRewards[i])) {
-			if (member->memberRewards[i] == '.') {
+	for (int i = 0; member->memberWallet[i]; i++) {
+		if (!isdigit(member->memberWallet[i])) {
+			if (member->memberWallet[i] == '.') {
 				dotCount++;
 				// Check only one dot is present
 				if (dotCount > 1)
@@ -3173,11 +3180,10 @@ int MI_InputDetailsValidation(string value, string mode) {
 			}
 		}
 	}
-
 	return 1;
 
 }
-/*for admin use*/ void AddMemberViaTxtFileProcess(const char* fileName) {
+/*for staff use*/ void MI_AddMemberViaTxtFileProcess(const char* fileName) {
 	FILE* fptr = fopen(fileName, "r");
 	if (fptr == NULL) {
 		printf("\nError opening file.\n");
@@ -3199,7 +3205,7 @@ int MI_InputDetailsValidation(string value, string mode) {
 		&validate.memberID, &validate.memberPass, &validate.memberName, &validate.memberPhoneNo,
 		&validate.memberJoinDate, &validate.memberRewards, &validate.memberWallet) == 7) {
 		// Validation
-		if (NewMemberIsValidated(&validate)) {
+		if (MI_NewMemberIsValidated(&validate)) {
 			// If all fields are valid
 			// Pass value into Member* struct
 			char tempDay[3] = "", tempMonth[3] = "", tempYear[5] = "";
@@ -3234,6 +3240,32 @@ int MI_InputDetailsValidation(string value, string mode) {
 	fclose(fptr);
 	fclose(fptr2);
 }
+/*for staff use*/ void MI_ConvertBinToTxt() {
+
+	int numOfMembers = MI_getNumberOfMembers();
+	Member* allMembers = MI_getMemberDetails(numOfMembers);
+
+	char fileName[100];
+	do {
+		system("cls");
+		printf("Enter new txt file name: ");
+		scanf("%s", &fileName);
+		rewind(stdin);
+
+	} while (G_ConfirmationIsValidated("Do you want to convert binary file to more txt file? (Y/N): "));
+
+	FILE* fptr = fopen(fileName, "w");
+
+	for (int i = 0; i < numOfMembers; i++) {
+		fprintf(fptr, "%s|%s|%s|%s|%d %d %d|%d|%.2lf\n", allMembers[i].memberID, allMembers[i].memberPass, allMembers[i].memberName,
+			allMembers[i].memberPhoneNo, allMembers[i].memberJoinDate.day, allMembers[i].memberJoinDate.month, allMembers[i].memberJoinDate.year,
+			allMembers[i].memberRewards, allMembers[i].memberWallet);
+	}
+
+	printf("\n\n%d member(s) has been saved into the new txt file \"%s\".\n\n", numOfMembers, fileName);
+	free(allMembers);
+	fclose(fptr);
+};
 
 //System Menu
 int G_systemMenu()
@@ -3279,7 +3311,7 @@ int SI_mainMenu() {
 		printf("2. Member Details Management\n");
 		printf("3. Train Schedule Management\n");
 		G_lineDesign();
-	} while (inputIsError = 
+	} while (inputIsError =
 		G_IntIsValidated("Mode: ", 3, &staffInformationDecision));
 	switch (staffInformationDecision) {
 	case 1:
@@ -3308,7 +3340,7 @@ int TS_mainMenu() {
 		printf("3.Search train schedule\n");
 		printf("4.Delete schedule\n");
 		printf("5.Modify train schedule\n");
-	} while (inputIsError = 
+	} while (inputIsError =
 		G_IntIsValidated("Mode: ", 5, &trainScheduleDecision));
 	switch (trainScheduleDecision) {
 	case 1:
@@ -3456,7 +3488,7 @@ int G_memberDetailsManagementForStaffMenu() {
 		printf("1. Member\'s Details Management\n");
 		printf("2. Member\'s Booking Management\n");
 		G_lineDesign();
-	} while (inputIsError = 
+	} while (inputIsError =
 		G_IntIsValidated("Mode: ", 2, &memberDetailsManagementDecision));
 	switch (memberDetailsManagementDecision) {
 	case 1:
@@ -3483,7 +3515,7 @@ int G_staffAccountManagementMenu() {
 		printf("  4. Display Staff Details\n");
 		printf("  5. Delete Staff\n");
 		G_lineDesign();
-	} while (inputIsError = 
+	} while (inputIsError =
 		G_IntIsValidated("Mode: ", 5, &staffAccountManagementMenuDecision));
 	system("cls");
 	switch (staffAccountManagementMenuDecision) {
