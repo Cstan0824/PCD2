@@ -106,7 +106,7 @@ int G_CalDiffTime(Time time, Time timeToCmp);
 void G_shiftSpaceForDrawTrain(int G_position);
 void G_displayHeaderOrFooter(char HeaderOrFooter, int size, char reportType);
 void G_DrawTrain();
-string G_getPassword();
+string G_getPassword(char module);
 
 //Menu
 int G_systemMenu();
@@ -398,7 +398,7 @@ void G_shiftSpaceForDrawTrain(int G_position) {
 	}
 }
 void G_displayHeaderOrFooter(char HeaderOrFooter, int size, char reportType) {
-	//T - TrainSchedule : B - BookingTicket : M - Member Informaiton
+	//T,S - TrainSchedule : B - BookingTicket : M - Member Informaiton : A - Staff Information
 	if (HeaderOrFooter == 'H') {
 		for (int i = 0; i < size; i++) {
 			printf("=");
@@ -418,6 +418,14 @@ void G_displayHeaderOrFooter(char HeaderOrFooter, int size, char reportType) {
 			printf("| %-3s | %-30s | %-30s | %-22s |   %-15s |\n",
 				"NO.", "Departure Station", "Arrival Station", "Departure Date", "Duration Time");
 		}
+		if (reportType == 'S') {
+			printf("| %-10s | %-30s | %-29s | %-18s | %-16s | %-14s | %-14s |\n",
+				"Train ID", "Departure Station", "Arrival Station", "Departure Time", "Arrival Time", "Available Seats", "Departure Date");
+		}
+		if (reportType == 'A') {
+			printf("| %-11s | %-30s | %-20s | %-20s | %-18s | %-14s |\n", "Staff ID", "Staff Name",
+				"Staff Password", "Staff Position", "Staff Joined Date", "Staff Salary");
+		}
 		for (int i = 0; i < size; i++) {
 			printf("=");
 		}
@@ -434,35 +442,63 @@ void G_displayHeaderOrFooter(char HeaderOrFooter, int size, char reportType) {
 	}
 
 }
-string G_getPassword() {
+string G_getPassword(char module) {
 	int i = 0;
-	static char tempPass[11]; // Static array to persist after function returns
+	static char tempPass[30]; // Static array to persist after function returns
 
-	do {
-		char c = _getch();
+	if (module == 'M') {
+		do {
+			char c = _getch();
 
-		if (c == '\r') { // Enter key
-			break;
-		}
-		else if (c == '\b') { // Backspace
-			if (i > 0) {
-				i--;
-				printf("\b \b"); // Move cursor back, print space, move cursor back again
+			if (c == '\r') { // Enter key
+				break;
 			}
-		}
-		else if ((int)c == 124 || (int)c <= 33 || (int)c >= 126) { // Check if printable character
-			continue;
-		}
-		else {
-			if (i < 10) { // Limiting the password length
-				tempPass[i++] = c;
-				printf("*");
+			else if (c == '\b') { // Backspace
+				if (i > 0) {
+					i--;
+					printf("\b \b"); // Move cursor back, print space, move cursor back again
+				}
 			}
-		}
-	} while (1);
+			else if ((int)c == 124 || (int)c <= 33 || (int)c >= 126) { // Check if printable character
+				continue;
+			}
+			else {
+				if (i < 10) { // Limiting the password length
+					tempPass[i++] = c;
+					printf("*");
+				}
+			}
+		} while (1);
+	}
+
+	if (module == 'S') {
+		do {
+			char c = _getch();
+
+			if (c == '\r') { // Enter key
+				break;
+			}
+			else if (c == '\b') { // Backspace
+				if (i > 0) {
+					i--;
+					printf("\b \b"); // Move cursor back, print space, move cursor back again
+				}
+			}
+			else if ((int)c == 124 || (int)c <= 33 || (int)c >= 126) { // Check if printable character
+				continue;
+			}
+			else {
+				if (i < 30) { // Limiting the password length
+					tempPass[i++] = c;
+					printf("*");
+				}
+			}
+		} while (1);
+	}
 
 	tempPass[i] = '\0'; // Null-terminate the password string
 	printf("\n"); // Print newline after password entry
+
 	return tempPass;
 }
 
@@ -579,7 +615,6 @@ void TB_DisplayBookingRecord(string trainFilter, string memberFilter)
 		currTrainID++;
 	}
 	printf("Sum of Total Price: %.2f\n", sumOfTotalPrice);
-	printf("%d Booking returned.\n", count);
 	system("pause");
 	free(booking);
 	free(displayedTrainID);
@@ -1286,17 +1321,15 @@ TrainSchedule* TS_GetTrainSchedule(string trainID)
 void TS_displaySchedule() {
 	int count = 0;
 	TrainSchedule train = { 0 };
+	G_DrawTrain();
 
-	FILE* fptr;
-	fptr = fopen("TrainSchedule.txt", "r");
+	FILE* fptr = fopen("TrainSchedule.txt", "r");
 	if (fptr == NULL) {
 		printf("Error: Unable to open file.\n");
 		exit(ISERROR);
 	}
 
-
-	printf("%-10s %-20s %27s %24s %14s %17s %15s\n", "Train ID", "Departure Station", "Arrival Station", "Departure Time", "Arrival Time", "Available Seats", "Departure Date");
-	printf("===============================================================================================================================================\n");
+	G_displayHeaderOrFooter('H', 154, 'S');
 	while (fscanf(fptr, "%[^|]|%[^|]|%[^|]|%02d:%02d|%02d:%02d|%d|%02d/%02d/%04d|%d\n",
 		train.trainID, train.departureStation, train.arrivalStation,
 		&train.departureTime.hour, &train.departureTime.min,
@@ -1305,15 +1338,16 @@ void TS_displaySchedule() {
 		&train.departureDate.day, &train.departureDate.month, &train.departureDate.year,
 		&train.isCancelled) != EOF) {
 		if (train.isCancelled == 0) {
-			printf("%-10s %-30s %-28s %-2s %02d:%02d %10s %02d:%02d %10s %-10d %-2s %02d/%02d/%04d\n",
+			printf("| %-10s | %-30s | %-29s | %02d:%02d %12s | %02d:%02d %10s | %-12d %-2s | %02d/%02d/%04d     |\n",
 				train.trainID, train.departureStation, train.arrivalStation,
-				"", train.departureTime.hour, train.departureTime.min, "",
+				 train.departureTime.hour, train.departureTime.min, "",
 				train.arrivalTime.hour, train.arrivalTime.min, "",
 				train.availableSeat, "", train.departureDate.day, train.departureDate.month, train.departureDate.year);
 			count++;
+			G_displayHeaderOrFooter('F', 154, 'S');
 		}
 	}
-	printf("Total %d record in train schedule\n", count);
+	printf("\nTotal %d record in train schedule\n", count);
 	fclose(fptr);
 	system("pause");
 }
@@ -1453,7 +1487,7 @@ void TS_searchSchedule() {
 		printf("Error: Unable to open file.\n");
 		exit(ISERROR);
 	}
-
+	G_DrawTrain();
 	// Display welcome message and prompt user to enter arrival station
 	printf("Welcom to the search mode\n");
 	printf("Please enter the arrival station you want (Enter 'quit' to back to main menu) : ");
@@ -1465,8 +1499,7 @@ void TS_searchSchedule() {
 	}
 
 	printf("\n");
-	printf("%-10s %-20s %27s %24s %14s %17s %15s\n", "Train ID", "Departure Station", "Arrival Station", "Departure Time", "Arrival Time", "Available Seats", "Departure Date");
-	printf("===============================================================================================================================================\n");
+	G_displayHeaderOrFooter('H', 154, 'S');
 
 	// Loop through each line of the file and search for matching records
 	while (fscanf(fptr, "%[^|]|%[^|]|%[^|]|%02d:%02d|%02d:%02d|%d|%02d/%02d/%04d|%d\n",
@@ -1478,11 +1511,12 @@ void TS_searchSchedule() {
 		&train.isCancelled) != EOF) {
 		// Check if arrival station matches user input and the train is not cancelled
 		if (strstr(strupr(train.arrivalStation), strupr(searchArrivalStation)) && train.isCancelled == 0) {
-			printf("%-10s %-30s %-28s %-2s %02d:%02d %10s %02d:%02d %10s %-10d %-2s %02d/%02d/%04d\n",
+			printf("| %-10s | %-30s | %-29s | %02d:%02d %12s | %02d:%02d %10s | %-12d %-2s | %02d/%02d/%04d     |\n",
 				train.trainID, train.departureStation, train.arrivalStation,
-				"", train.departureTime.hour, train.departureTime.min, "",
+				train.departureTime.hour, train.departureTime.min, "",
 				train.arrivalTime.hour, train.arrivalTime.min, "",
 				train.availableSeat, "", train.departureDate.day, train.departureDate.month, train.departureDate.year);
+			G_displayHeaderOrFooter('F', 154, 'S');
 			count++;
 			isFound = 1; // Set flag to indicate matching record found
 		}
@@ -1886,17 +1920,16 @@ void SI_searchStaff() {
 	scanf("%10[^\n]", &searchStaff);
 	rewind(stdin);
 	if (strncmp(searchStaff, "0000", 11) == 0) return;
-
+	G_DrawTrain();
+	G_displayHeaderOrFooter('H', 132, 'A');
 	for (int i = 0; i < r; i++)
 	{
 		if (strncmp(staff[i].staffID, searchStaff, 11) == 0)
 		{
-			printf("  Staff ID	 : %s\n", staff[i].staffID);
-			printf("  Name		 : %s\n", staff[i].name);
-			printf("  Password	 : %s\n", staff[i].password);
-			printf("  Position	 : %s\n", staff[i].position);
-			printf("  Joined date(NO/ DDMMYY)    : %d/%d/%d\n", staff[i].joinedDate.day, staff[i].joinedDate.month, staff[i].joinedDate.year);
-			printf("  Salary	 : RM%.2f\n\n", staff[i].salary);
+			printf("| %-11s | %-30s | %-20s | %-20s |     %02d/%02d/%04d     |  RM%-11.2f |\n",
+				staff[i].staffID, staff[i].name, staff[i].password, staff[i].position,
+				staff[i].joinedDate.day, staff[i].joinedDate.month, staff[i].joinedDate.year, staff[i].salary);
+			G_displayHeaderOrFooter('F', 132, 'A');
 			system("pause");
 			break;
 		}
@@ -1923,7 +1956,7 @@ void SI_modifyStaff() {
 		&staff[r].salary) != EOF; r++);
 	fclose(fptr);
 
-
+	G_DrawTrain();
 	printf("\n  Number of records: %d\n", r);
 	printf("+ - - - - - - - - - - +\n");
 	for (i = 0; i < r; i++)
@@ -1933,15 +1966,16 @@ void SI_modifyStaff() {
 	printf("+ - - - - - - - - - - +\n\n");
 	printf("\n");
 	printf("\n\t< Modify Staff >\n");
-	G_lineDesign();
+	G_DrawTrain();
 	printf("  Enter staff ID (Enter \'0000\' to exit):");
 	scanf("%[^\n]", &searchStaff);
 	rewind(stdin);
-	if (strncmp(searchStaff, "0000", 11)) return;
+	if (strncmp(searchStaff, "0000", 11) == 0) { return; };
 
 	for (i = 0; i < r; i++) {
 		if (strcmp(searchStaff, staff[i].staffID) == 0) {
 			do {
+				if (inputIsError == ISERROR) return;
 				printf("\n\t< Modification - Staff >\n");
 				G_lineDesign();
 				printf("  1. Staff ID\n");
@@ -1964,7 +1998,7 @@ void SI_modifyStaff() {
 				break;
 			case 3:
 				printf("  Modifying - Password: ");
-				scanf("%[^\n]", &staff[i].password);
+				strncpy(staff[i].password, G_getPassword('S'), 30);
 				break;
 			case 4:
 				printf("  Modifying - Position: ");
@@ -2034,24 +2068,23 @@ void SI_modifyStaff() {
 }
 void SI_displayStaff() {
 	Staff staff = { 0 };
-	char searchStaff[10] = "";
 
 	FILE* fptr = fopen("staffs.txt", "r");
 	if (!fptr) {
 		printf("  Unable to open file.\n");
 		exit(ISERROR);
 	}
-
-	printf("Staff ID     Staff Name       Staff Password     Staff Position    Staff Joined Date    Staff Salary\n");
-	printf("========================================================================================================\n");
+	G_DrawTrain();
+	G_displayHeaderOrFooter('H', 132, 'A');
 	while (fscanf(fptr, "%[^|]|%[^|]|%[^|]|%[^|]|%d/%d/%d|%lf\n",
 		&staff.staffID, &staff.name, &staff.password, &staff.position,
 		&staff.joinedDate.day, &staff.joinedDate.month, &staff.joinedDate.year,
 		&staff.salary) != EOF) {
-		printf("%-12s %-17s %-17s %-14s %d/%02d/%02d \t\t  RM%-11.2f\n", staff.staffID, staff.name, staff.password, staff.position, staff.joinedDate.day, staff.joinedDate.month, staff.joinedDate.year, staff.salary);
+		printf("| %-11s | %-30s | %-20s | %-20s |     %02d/%02d/%04d     |  RM%-11.2f |\n", staff.staffID, staff.name, staff.password, staff.position, staff.joinedDate.day, staff.joinedDate.month, staff.joinedDate.year, staff.salary);
+		G_displayHeaderOrFooter('F', 132, 'A');
 	}
 	fclose(fptr);
-	system("cls");
+	system("pause");
 
 }
 void SI_deleteStaff() {
@@ -2072,7 +2105,7 @@ void SI_deleteStaff() {
 			&staff[i].joinedDate.day, &staff[i].joinedDate.month, &staff[i].joinedDate.year,
 			&staff[i].salary) != EOF; i++);
 	fclose(fptr);
-
+	G_DrawTrain();
 	printf("+ - - - - - - - - - - +\n");
 	printf("|%-21s|\n", "Staff Existing ID:");
 	for (int j = 0; j < i; j++)
@@ -2149,7 +2182,7 @@ void SI_loginStaff() {
 	rewind(stdin);
 
 	printf("Enter Password: ");
-	scanf("%29[^\n]", &enteredPassword);
+	strncpy(enteredPassword, G_getPassword('S'), 30);
 	rewind(stdin);
 
 	// Read staff information from a file
@@ -2176,6 +2209,7 @@ void SI_loginStaff() {
 		}
 	}
 	printf("Login Fail\n");
+	system("pause");
 	fclose(fptr);
 }
 
@@ -2230,7 +2264,7 @@ void MI_memberLogin() {
 		scanf("%[^\n]", &inputID);
 		rewind(stdin);
 		printf("\n\nPlease enter your password (at least 7, maximum 10 characters): ");
-		string inputPass = G_getPassword();
+		string inputPass = G_getPassword('M');
 
 		//verify login
 		verify = MI_verifyLogin(inputID, inputPass);
@@ -2326,13 +2360,13 @@ void MI_registerMember() {
 		do {
 			//prompt user for new password
 			printf("\n\nPlease enter a password (at least 7, maximum 10 characters): ");
-			strncpy(tempPass, G_getPassword(), 11);
+			strncpy(tempPass, G_getPassword('M'), 11);
 			validation = MI_InputDetailsValidation(tempPass, "idOrPass");
 		} while (validation != 0);
 
 		//prompt user to confirm password
 		printf("\n\nPlease re-enter to confirm password: ");
-		strncpy(confirmPass, G_getPassword(), 11);
+		strncpy(confirmPass, G_getPassword('M'), 11);
 
 		verify = strncmp(tempPass, confirmPass, 11);
 		if (verify != 0) {
@@ -2493,7 +2527,7 @@ void MI_MemberEditDetails(string memberID) {
 							//password verification before editing
 							errorPassword = 0;
 							printf("Please enter the current password for this account: ");
-							strncpy(tempPass1, G_getPassword(), 11);
+							strncpy(tempPass1, G_getPassword('M'), 11);
 							if (strcmp(tempPass1, allMembers[i].memberPass) != 0) {
 								printf("\n\nWrong password. Please try again. \n\n");
 								errorPassword = 1;
@@ -2503,14 +2537,14 @@ void MI_MemberEditDetails(string memberID) {
 						//prompt user for new password
 						printf("\n\nPlease enter a new password (at least 7, maximum 10 characters): ");
 
-						strncpy(tempPass2, G_getPassword(), 11);
+						strncpy(tempPass2, G_getPassword('M'), 11);
 						validation = MI_InputDetailsValidation(tempPass2, "idOrPass");
 
 					} while (validation != 0);
 
 					//re-enter new password
 					printf("\nPlease re-enter to confirm new password: ");
-					strncpy(confirmPass, G_getPassword(), 11);
+					strncpy(confirmPass, G_getPassword('M'), 11);
 					verify = strncmp(tempPass2, confirmPass, 11);
 					if (verify != 0) {
 						printf("\n\nIncorrect password. Please enter again\n\n");
@@ -3023,11 +3057,11 @@ int MI_InputDetailsValidation(string value, string mode) {
 			do {
 				G_DrawTrain();
 				printf("\nPlease enter a password (at least 7, maximum 10 characters): ");
-				strcpy(tempPass, G_getPassword());
+				strcpy(tempPass, G_getPassword('M'));
 			} while (MI_InputDetailsValidation(tempPass, "idOrPass") != 0);
 
 			printf("\nPlease re-enter to confirm password: ");
-			strcpy(confirmPass, G_getPassword());
+			strcpy(confirmPass, G_getPassword('M'));
 
 			verify = strcmp(tempPass, confirmPass);
 			if (verify != 0) {
@@ -3159,11 +3193,11 @@ int MI_InputDetailsValidation(string value, string mode) {
 						do {
 							printf("Please enter a new password (at least 7, maximum 10 characters): ");
 
-							strncpy(tempPass, G_getPassword(), 11);
+							strncpy(tempPass, G_getPassword('M'), 11);
 						} while (MI_InputDetailsValidation(tempPass, "idOrPass") != 0);
 
 						printf("\n\nPlease re-enter to confirm new password: ");
-						strncpy(confirmPass, G_getPassword(), 11);
+						strncpy(confirmPass, G_getPassword('M'), 11);
 
 						verify = strcmp(tempPass, confirmPass);
 						if (verify != 0) {
@@ -3318,7 +3352,7 @@ int MI_InputDetailsValidation(string value, string mode) {
 
 	} while (G_ConfirmationIsValidated("Do you want to add more members via txt file?"));
 };
-/*for admin use*/ int MI_NewMemberIsValidated(const ValidateTxt* member) {
+/*for staff use*/ int MI_NewMemberIsValidated(const ValidateTxt* member) {
 	// Check memberID length
 	if (!(strlen(member->memberID) >= 7 && strlen(member->memberID) <= 10))
 		return 0;
@@ -3408,7 +3442,7 @@ int MI_InputDetailsValidation(string value, string mode) {
 	return 1;
 
 }
-/*for admin use*/ void MI_UpdateMemberDetails() {
+/*for staff use*/ void MI_UpdateMemberDetails() {
 	int numOfMembers = MI_getNumberOfMembers();
 	Member* allMembers = MI_getMemberDetails(numOfMembers);
 	for (int i = 0; i < numOfMembers; i++)
@@ -3532,7 +3566,7 @@ int MI_InputDetailsValidation(string value, string mode) {
 		fclose(fptr);
 	} while (G_ConfirmationIsValidated("Do you want to convert binary file to more txt file?"));
 
-};
+}
 
 
 
