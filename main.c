@@ -1129,6 +1129,63 @@ TrainSchedule* TS_GetTrainSchedule(string trainID)
 	} while (inputIsError = G_IntIsValidated("Select The train Schedule", count, &selectedTrainID));
 	return inputIsError == -1 ? NULL : (trainSchedule + selectedTrainID - 1);
 }
+//Train Schedule
+TrainSchedule* TS_GetTrainSchedule(string trainID)
+{
+	int numRow = G_GetTxtFileNumRow("TrainSchedule.txt");
+	TrainSchedule* trainSchedule = (TrainSchedule*)malloc(sizeof(TrainSchedule) * numRow);
+	TrainSchedule tempTrainSchedule = { 0 };
+	if (!trainSchedule) {
+		printf("Memory Allocation Failed.");
+		exit(ISERROR);
+	}
+	int selectedTrainID = 1;
+	int count = 0;
+	FILE* fptr = fopen("Schedule.txt", "r");
+	if (!fptr) {
+		printf("File unable open.\n");
+		exit(ISERROR);
+	}
+	int inputIsError = 1;
+	do {
+		if (inputIsError == -1) break;
+		printf("%-3s %-20s %-20s %-20s %-20s\n", "NO.", "Departure Station", "Arrival Station", "Departure Date", "Duration Time");
+		printf("%-3s %-20s %-20s %-20s %-20s\n", "---", "---------------", "-------------", "--------------", "-------------");
+		for (int i = 0;
+			fscanf(fptr, "%[^|]|%[^|]|%[^|]|%02d:%02d|%02d:%02d|%d|%02d/%02d/%04d|%d\n",
+				&tempTrainSchedule.trainID, &tempTrainSchedule.departureStation, &tempTrainSchedule.arrivalStation,
+				&tempTrainSchedule.departureTime.hour, &tempTrainSchedule.departureTime.min,
+				&tempTrainSchedule.arrivalTime.hour, &tempTrainSchedule.arrivalTime.min,
+				&tempTrainSchedule.availableSeat,
+				&tempTrainSchedule.departureDate.day, &tempTrainSchedule.departureDate.month, &tempTrainSchedule.departureDate.year,
+				&tempTrainSchedule.isCancelled) != EOF; )
+
+		{
+			if (tempTrainSchedule.isCancelled == 1) {
+				continue;
+			}
+			trainSchedule[i] = tempTrainSchedule;
+
+			if (trainID == NULL) {
+				printf("%02d. %-20s %-20s %02d/%02d/%04d %d:%d ~ %d:%d\n", ++count,
+					trainSchedule[i].departureStation, trainSchedule[i].arrivalStation,
+					trainSchedule[i].departureDate.day, trainSchedule[i].departureDate.month, trainSchedule[i].departureDate.year,
+					trainSchedule[i].departureTime.hour, trainSchedule[i].departureTime.min,
+					trainSchedule[i].arrivalTime.hour, trainSchedule[i].arrivalTime.min);
+				i++;
+				continue;
+			}
+			if (strncmp(trainSchedule[i].trainID, trainID, 10)) return (trainSchedule + i);
+		}
+		fclose(fptr);
+
+		if (trainID != NULL) {
+			printf("No Result founded for %s\n", trainID);
+			return NULL;
+		}
+	} while (inputIsError = G_IntIsValidated("Select The train Schedule", count, &selectedTrainID));
+	return inputIsError == -1 ? NULL : (trainSchedule + selectedTrainID - 1);
+}
 void TS_displaySchedule() {
 	int count = 0;
 	TrainSchedule train = { 0 };
@@ -1140,8 +1197,7 @@ void TS_displaySchedule() {
 		exit(ISERROR);
 	}
 
-	//testing
-	printf("\n\n===============================================================================================================================================\n");
+
 	printf("%-10s %-20s %27s %24s %14s %17s %15s\n", "Train ID", "Departure Station", "Arrival Station", "Departure Time", "Arrival Time", "Available Seats", "Departure Date");
 	printf("===============================================================================================================================================\n");
 	while (fscanf(fptr, "%[^|]|%[^|]|%[^|]|%02d:%02d|%02d:%02d|%d|%02d/%02d/%04d|%d\n",
@@ -1184,7 +1240,6 @@ void TS_addSchedule() {
 	//Input the schedule details
 	do {
 		//Departure Station
-		G_DrawTrain();
 		printf("Enter the Departure Station (Enter \'0000\' to exit):");
 		scanf("%[^\n]", &train.departureStation);
 		rewind(stdin);
@@ -1194,7 +1249,6 @@ void TS_addSchedule() {
 		}
 		printf("\n");
 		//Arrival Station
-		G_DrawTrain();
 		printf("Enter the Arrival Station (Enter \'0000\' to exit):");
 		scanf("%[^\n]", &train.arrivalStation);
 		rewind(stdin);
@@ -1206,7 +1260,6 @@ void TS_addSchedule() {
 
 
 		//Departure Time
-		G_DrawTrain();
 		train.departureTime = G_GetTime("Departure Time");
 		if (train.departureTime.hour == ISERROR) {
 			fclose(fptr);
@@ -1215,7 +1268,6 @@ void TS_addSchedule() {
 		printf("\n");
 
 		//Arrival Time
-		G_DrawTrain();
 		train.arrivalTime = G_GetTime("Arrival Time");
 		if (train.arrivalTime.hour == ISERROR) {
 			fclose(fptr);
@@ -1225,7 +1277,6 @@ void TS_addSchedule() {
 
 		//Available Seat
 		do {
-			G_DrawTrain();
 			if (inputIsError == ISERROR) {
 				fclose(fptr);
 				return;
@@ -1238,7 +1289,6 @@ void TS_addSchedule() {
 		//Departure Date
 		do
 		{
-			G_DrawTrain();
 			if (diffDate > 0) printf("Departure Date can\'t be before current date.\n");
 
 			//Departure Date (Year)
@@ -1251,7 +1301,6 @@ void TS_addSchedule() {
 				if (inputIsError == 1)  G_ErrorMessage();
 			}
 
-			G_DrawTrain();
 			//Departure Date(Month)
 			while (inputIsError =
 				G_IntIsValidated("Enter the Departure Date(Months)", 12, &train.departureDate.month)) {
@@ -1264,7 +1313,7 @@ void TS_addSchedule() {
 
 			//Calculate the day of febuary
 			dayOfMonth[1] = train.departureDate.year % 4 + 28;
-			G_DrawTrain();
+
 			//Departure Date(Day)
 			while (inputIsError =
 				G_IntIsValidated("Enter the Departure Date(Day)", dayOfMonth[train.departureDate.month - 1], &train.departureDate.day)) {
@@ -1295,7 +1344,7 @@ void TS_addSchedule() {
 	fclose(fptr);
 	system("pause");
 }
-void TS_searchSchedule() {
+void TS_serachSchedule() {
 	int count = 0;
 	char searchArrivalStation[50] = "";
 	int isFound = 0;
@@ -1308,8 +1357,8 @@ void TS_searchSchedule() {
 		exit(ISERROR);
 	}
 
-	G_DrawTrain();
-	printf("Welcome to the search mode\n");
+	// Display welcome message and prompt user to enter arrival station
+	printf("Welcom to the search mode\n");
 	printf("Please enter the arrival station you want (Enter 'quit' to back to main menu) : ");
 	scanf("%[^\n]", &searchArrivalStation);
 	rewind(stdin);
@@ -1319,10 +1368,10 @@ void TS_searchSchedule() {
 	}
 
 	printf("\n");
-	printf("===============================================================================================================================================\n");
 	printf("%-10s %-20s %27s %24s %14s %17s %15s\n", "Train ID", "Departure Station", "Arrival Station", "Departure Time", "Arrival Time", "Available Seats", "Departure Date");
 	printf("===============================================================================================================================================\n");
 
+	// Loop through each line of the file and search for matching records
 	while (fscanf(fptr, "%[^|]|%[^|]|%[^|]|%02d:%02d|%02d:%02d|%d|%02d/%02d/%04d|%d\n",
 		train.trainID, train.departureStation, train.arrivalStation,
 		&train.departureTime.hour, &train.departureTime.min,
@@ -1330,6 +1379,7 @@ void TS_searchSchedule() {
 		&train.availableSeat,
 		&train.departureDate.day, &train.departureDate.month, &train.departureDate.year,
 		&train.isCancelled) != EOF) {
+		// Check if arrival station matches user input and the train is not cancelled
 		if (strstr(strupr(train.arrivalStation), strupr(searchArrivalStation)) && train.isCancelled == 0) {
 			printf("%-10s %-30s %-28s %-2s %02d:%02d %10s %02d:%02d %10s %-10d %-2s %02d/%02d/%04d\n",
 				train.trainID, train.departureStation, train.arrivalStation,
@@ -1337,7 +1387,7 @@ void TS_searchSchedule() {
 				train.arrivalTime.hour, train.arrivalTime.min, "",
 				train.availableSeat, "", train.departureDate.day, train.departureDate.month, train.departureDate.year);
 			count++;
-			isFound = 1;
+			isFound = 1; // Set flag to indicate matching record found
 		}
 	}
 	if (isFound) {
@@ -1349,8 +1399,9 @@ void TS_searchSchedule() {
 	fclose(fptr);
 	system("pause");
 	system("cls");
+	// Ask user if they want to continue searching
 	if (G_ConfirmationIsValidated("Do you want to continue to search?")) {
-		TS_searchSchedule();
+		TS_serachSchedule();
 	}
 }
 void TS_deleteSchedule() {
@@ -1378,7 +1429,6 @@ void TS_deleteSchedule() {
 
 	do {
 		inputIsError = 1;
-		G_DrawTrain();
 		printf("Please enter the train ID you want to delete (Enter \'0000\' to exit): ");
 		scanf("%[^\n]", &TrainID);
 		if (strncmp(TrainID, "0000", 10) == 0) return;
@@ -1451,7 +1501,6 @@ void TS_modifySchedule() {
 	//Select Train ID to modified
 	do {
 		found = 0;
-		G_DrawTrain();
 		printf("\n\n\nTrain ID to be modified (Enter\'0000\' to exit):");
 		scanf("%[^\n]", &trainID);
 		rewind(stdin);
@@ -1466,7 +1515,6 @@ void TS_modifySchedule() {
 				strncpy(tempTrainSchedule.trainID, train[i].trainID, 10);
 
 				//Departure Station
-				G_DrawTrain();
 				printf("Enter the Departure Station (Enter \'0000\' to exit):");
 				scanf("%[^\n]", &tempTrainSchedule.departureStation);
 				rewind(stdin);
@@ -1475,7 +1523,6 @@ void TS_modifySchedule() {
 				}
 
 				//Arrival Station
-				G_DrawTrain();
 				printf("Enter the Arrival Station (Enter \'0000\' to exit):");
 				scanf("%[^\n]", &tempTrainSchedule.arrivalStation);
 				rewind(stdin);
@@ -1484,14 +1531,12 @@ void TS_modifySchedule() {
 				}
 
 				//Departure Time
-				G_DrawTrain();
 				tempTrainSchedule.departureTime = G_GetTime("Departure Time");
 				if (tempTrainSchedule.departureTime.hour == -1) {
 					return;
 				}
 
 				//Arrival Time
-				G_DrawTrain();
 				tempTrainSchedule.arrivalTime = G_GetTime("Arrival Time");
 				if (tempTrainSchedule.arrivalTime.hour == -1) {
 					return;
@@ -1499,7 +1544,6 @@ void TS_modifySchedule() {
 
 				//Available Seat
 				do {
-					G_DrawTrain();
 					if (inputIsError == -1) {
 						return;
 					}
@@ -1510,7 +1554,6 @@ void TS_modifySchedule() {
 				//Departure Date
 				do
 				{
-					G_DrawTrain();
 					if (diffDate < 0) printf("Departure Date can\'t be before current date.\n");
 
 					//Departure Date (Year)
@@ -1521,7 +1564,7 @@ void TS_modifySchedule() {
 						}
 						if (inputIsError == 1)  G_ErrorMessage();
 					}
-					G_DrawTrain();
+
 					//Departure Date(Month)
 					while (inputIsError =
 						G_IntIsValidated("Enter the Departure Date(Months)", 12, &tempTrainSchedule.departureDate.month)) {
@@ -1533,7 +1576,7 @@ void TS_modifySchedule() {
 
 					//Calculate the day of febuary
 					dayOfMonth[1] = tempTrainSchedule.departureDate.year % 4 + 28;
-					G_DrawTrain();
+
 					//Departure Date(Day)
 					while (inputIsError =
 						G_IntIsValidated("Enter the Departure Date(Days)",
@@ -1545,13 +1588,13 @@ void TS_modifySchedule() {
 					}
 
 					diffDate = G_CalDiffDate(currDate, tempTrainSchedule.departureDate);
-				} while (diffDate < 0);
+				} while (diffDate > 0);
 				diffDate = 0;
 
 				//isCancelled
 				tempTrainSchedule.isCancelled = 0;
 				tempTrainSchedule.availableSeat *= 40;
-				
+
 				if (G_ConfirmationIsValidated("\nModify Train Schedule ?"))
 				{
 					found = 0;
