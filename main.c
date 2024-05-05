@@ -6,8 +6,7 @@
 #include <Windows.h>
 #define ISERROR -1
 #pragma warning(disable:4996)
-//jeremycjc
-//chin123lol
+
 typedef char* string;
 
 typedef struct {
@@ -308,7 +307,7 @@ int G_GetTxtFileNumRow(string fileName)
 	return numRow;
 }
 void G_lineDesign() {
-	for (int i = 0; i < 40; i++) {
+	for (int i = 0; i < 45; i++) {
 		printf("=");
 	}
 	printf("\n");
@@ -366,7 +365,7 @@ void G_DrawTrain() {
 	for (int i = 0; i < G_maxPosition; i++) {
 		system("cls");
 		G_shiftSpaceForDrawTrain(G_position);
-		printf("      _____________   _____________   _____________   _______________________________________^^_\n");
+		printf("\x1b[34m      _____________   _____________   _____________   _______________________________________^^_\n");
 		G_shiftSpaceForDrawTrain(G_position);
 		printf("     |  ___   ___  |||  ___   ___  |||  ___   ___  |||  ___   ___   ___    ___ ___  |   __  ,----\\\\\n");
 		G_shiftSpaceForDrawTrain(G_position);
@@ -386,7 +385,7 @@ void G_DrawTrain() {
 		G_shiftSpaceForDrawTrain(G_position);
 		printf("-=@==@==@=@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@=-\n");
 		G_shiftSpaceForDrawTrain(G_position);
-		printf("-=@==@==@=@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@=-\n");
+		printf("-=@==@==@=@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@=-\x1b[0m\n");
 		G_position = (G_position + 1) % G_maxPosition;
 		Sleep(5);
 	}
@@ -430,7 +429,7 @@ void G_displayHeaderOrFooter(char HeaderOrFooter, int size, char reportType) {
 			printf("=");
 		}
 		printf("\n");
-		
+
 	}
 	else if (HeaderOrFooter == 'F') {
 
@@ -622,7 +621,8 @@ void TB_DisplayBookingRecord(string trainFilter, string memberFilter)
 void TB_DisplayBookingRecordHdr(Booking booking, double* totalPrice, TrainSchedule trainSchedule)
 {
 	Date bookingDate = G_GetCurrentDate();
-	printf("%20s %-20s\n%20s %-20s  ~  %-20s\n%20s %02d/%02d/%04d \n%20s [%02d:%02d~%02d:%02d]\n%20s %02d/%02d/%04d\n",
+	G_DrawTrain();
+	printf("\n\n%20s %-20s\n%20s %-20s  ~  %-20s\n%20s %02d/%02d/%04d \n%20s [%02d:%02d~%02d:%02d]\n%20s %02d/%02d/%04d\n",
 		"TRAIN ID: ",
 		booking.ticketDetails.trainID,
 		"STATION: ",
@@ -998,6 +998,7 @@ Booking* TB_GetBookingDetails(TrainSchedule trainSchedule, int* length) {
 
 	do
 	{
+		G_DrawTrain();
 		Booking* tempBooking = (Booking*)realloc(booking, sizeof(Booking) * ++lengthOfBooking);
 		int* tempNotAvailableSeat =
 			(int*)realloc(notAvailableSeat, sizeof(int) * ((size_t)lengthOfNotAvailableSeat + (size_t)lengthOfBooking));
@@ -1026,8 +1027,7 @@ Booking* TB_GetBookingDetails(TrainSchedule trainSchedule, int* length) {
 			return NULL;
 		}
 		notAvailableSeat[lengthOfNotAvailableSeat + currPointedIndex] = seatID;
-		system("cls");
-	} while (G_ConfirmationIsValidated("Do you want to continue add booking?"));
+	} while (G_ConfirmationIsValidated("\nDo you want to continue add booking?"));
 
 	*length = lengthOfBooking;
 	free(notAvailableSeat);
@@ -1049,7 +1049,7 @@ void TB_DisplaySeat(int seatQuantity, int** notAvailableSeat, int lengthOfNotAva
 	const char* currColor = "\033[0;37m";
 	const char* color[] =
 	{
-		"\033[0;37m", // White[0] -- Available seat / Standard seat / Default Color
+		"\033[1;30m", // White[0] -- Available seat / Standard seat / Default Color
 		"\033[0;32m", // Green[1] -- Seat for Premium
 		"\033[0;33m", // Yellow[2] -- Seat for Sleeping Berths
 		"\033[0;34m", // Blue[3] -- Seat for Special Needs Seat
@@ -1120,7 +1120,7 @@ void TB_GetSeatDetails(TrainSchedule trainSchedule, Ticket* ticket, int** notAva
 	{
 		if (inputIsError == ISERROR) break;
 
-		inputIsError = G_IntIsValidated("Select your Seat ID", trainSchedule.availableSeat, &selectedSeatID);
+		inputIsError = G_IntIsValidated("\nSelect your Seat ID", trainSchedule.availableSeat, &selectedSeatID);
 		if (G_InArray(*notAvailableSeat, &selectedSeatID, sizeof(int),
 			lengthOfNotAvailableSeat, G_CompareInt)) {
 			printf("Seat Unavailable.\n");
@@ -1204,14 +1204,16 @@ void TB_GetPackageDetails(Booking* booking, int length, int* currentPoint) {
 	};
 	int selectedPackage = 1;
 
-	if (!G_ConfirmationIsValidated("Do you want to use Member Point?")) return;
+	if (!G_ConfirmationIsValidated("\nDo you want to use Member Point?")) return;
 
-	printf("Current ticket booked : %d\nCurrent Point : %dP\n", length, loggedInMember.memberRewards);
+	printf("\n\nCurrent ticket booked : %d\n\nCurrent Point : %dP\n", length, loggedInMember.memberRewards);
+	G_lineDesign();
 	for (int i = 0; i < 3 && i < length; i++)
 	{
 		printf("Package %d : %s for all tickets! Only require %dPs\n"
 			, i + 1, package[i].desc, package[i].pointRequired);
 	}
+	G_lineDesign();
 	int inputIsError = 1;
 	while (inputIsError) {
 		inputIsError = G_IntIsValidated("Select the package you want to exchange", length, &selectedPackage);
@@ -1233,7 +1235,7 @@ void TB_GetPackageDetails(Booking* booking, int length, int* currentPoint) {
 }
 int TB_CheckAccountBalance(double priceToPaid, double* currentBalance) {
 	while (*currentBalance < priceToPaid) {
-		printf("Current Balance : %.2f\n", *currentBalance);
+		printf("\nCurrent Balance : %.2f\n\n", *currentBalance);
 		if (!G_ConfirmationIsValidated(
 			"Balance is not enough to purchase the booking, do you want to top up or cancel the booking?"))
 			return 0;
@@ -1314,7 +1316,7 @@ TrainSchedule* TS_GetTrainSchedule(string trainID)
 			printf("No Result founded for %s\n", trainID);
 			return NULL;
 		}
-	} while (inputIsError = 
+	} while (inputIsError =
 		G_IntIsValidated("Select The train Schedule", count, &selectedTrainID));
 	return inputIsError == ISERROR ? NULL : (trainSchedule + selectedTrainID - 1);
 }
@@ -1340,7 +1342,7 @@ void TS_displaySchedule() {
 		if (train.isCancelled == 0) {
 			printf("| %-10s | %-30s | %-29s | %02d:%02d %12s | %02d:%02d %10s | %-12d %-2s | %02d/%02d/%04d     |\n",
 				train.trainID, train.departureStation, train.arrivalStation,
-				 train.departureTime.hour, train.departureTime.min, "",
+				train.departureTime.hour, train.departureTime.min, "",
 				train.arrivalTime.hour, train.arrivalTime.min, "",
 				train.availableSeat, "", train.departureDate.day, train.departureDate.month, train.departureDate.year);
 			count++;
@@ -1905,15 +1907,13 @@ void SI_searchStaff() {
 		&staff[r].salary) != EOF; r++);
 
 	fclose(fptr);
-
+	G_DrawTrain();
 	printf("\n  Number of records: %d\n", r);
 	printf("  Existing ID: ");
-
 	for (int i = 0; i < r; i++) {
 		printf(" %-11s ", staff[i].staffID);
 	}
 	printf("\n");
-	G_DrawTrain();
 	printf("\n\t< Search Staff >\n");
 	G_lineDesign();
 	printf("  Enter staff ID (Enter \'0000\' to exit):");
@@ -1976,6 +1976,7 @@ void SI_modifyStaff() {
 		if (strcmp(searchStaff, staff[i].staffID) == 0) {
 			do {
 				if (inputIsError == ISERROR) return;
+				G_DrawTrain();
 				printf("\n\t< Modification - Staff >\n");
 				G_lineDesign();
 				printf("  1. Staff ID\n");
@@ -2045,6 +2046,7 @@ void SI_modifyStaff() {
 				break;
 			}
 			rewind(stdin);
+			G_DrawTrain();
 			printf("  Updated.\n");
 			printf("  Staff ID	 : %s\n", staff[i].staffID);
 			printf("  Name		 : %s\n", staff[i].name);
@@ -2177,11 +2179,11 @@ void SI_loginStaff() {
 	// Prompt the user to enter staff ID and password
 	G_DrawTrain();
 	printf("\n\t< Staff Login >\n");
-	printf("Enter Staff ID: ");
+	printf("\nEnter Staff ID: ");
 	scanf("%10[^\n]", &enteredStaffID);
 	rewind(stdin);
 
-	printf("Enter Password: ");
+	printf("\nEnter Password: ");
 	strncpy(enteredPassword, G_getPassword('S'), 30);
 	rewind(stdin);
 
@@ -2259,7 +2261,9 @@ void MI_memberLogin() {
 		G_DrawTrain();
 
 		//prompt user for member ID and password
-		printf("MEMBER LOGIN\n\n");
+		G_lineDesign();
+		printf("MEMBER LOGIN\n");
+		G_lineDesign();
 		printf("Please enter your Member ID (at least 7, maximum 10 characters): ");
 		scanf("%[^\n]", &inputID);
 		rewind(stdin);
@@ -3573,20 +3577,21 @@ int MI_InputDetailsValidation(string value, string mode) {
 //System Menu
 int G_systemMenu()
 {
-
+	
 	int inputIsError = 0;
 	int systemMenuDecision;
 	do {
 		if (inputIsError == ISERROR) exit(ISERROR);
-		system("cls");
 		G_DrawTrain();
-		printf("Welcome to Xpress Railway\n\n");
+		printf("Welcome to \x1b[34mXpress Railway\x1b[0m\n\n");
+		G_lineDesign();
 		printf("Choose your mode: \n");
 		printf("1. Member Login\n");
 		printf("2. Member Register\n");
-		printf("3. Staff Login\n\n");
+		printf("3. Staff Login\n");
+		G_lineDesign();
 	} while (inputIsError =
-		G_IntIsValidated("Mode", 3, &systemMenuDecision));
+		G_IntIsValidated("\nMode", 3, &systemMenuDecision));
 
 	switch (systemMenuDecision)
 	{
@@ -3617,7 +3622,7 @@ int SI_mainMenu() {
 		G_lineDesign();
 	} while (inputIsError =
 		G_IntIsValidated("Mode", 3, &staffInformationDecision));
-	switch (staffInformationDecision) 
+	switch (staffInformationDecision)
 	{
 	case 1:
 		while (G_staffAccountManagementMenu());
@@ -3639,14 +3644,16 @@ int TS_mainMenu() {
 		if (inputIsError == ISERROR) return 0;
 		system("cls");
 		G_DrawTrain();
-		printf("=====================================================\n");
+		printf("Select your mode: \n");
+		G_lineDesign();
 		printf("1.Show train schedule\n");
 		printf("2.Add train schedule\n");
 		printf("3.Search train schedule\n");
 		printf("4.Delete schedule\n");
-		printf("5.Modify train schedule\n\n");
+		printf("5.Modify train schedule\n");
+		G_lineDesign();
 	} while (inputIsError =
-		G_IntIsValidated("Mode", 5, &trainScheduleDecision));
+		G_IntIsValidated("\nMode", 5, &trainScheduleDecision));
 	switch (trainScheduleDecision) {
 	case 1:
 		TS_displaySchedule();
@@ -3694,11 +3701,14 @@ int TB_mainMenu() {
 		if (inputIsError == ISERROR) return 0;
 
 		G_DrawTrain();
-
+		printf("Member's Booking Management\n");
+		G_lineDesign();
 		for (int i = 0; i < (3 + isAdmin); i++)
 		{
 			printf("%d. %s\n", i + 1, bookingMenu[i]);
 		}
+		G_lineDesign();
+		printf("\n");
 	} while (inputIsError = G_IntIsValidated("Mode ", 3 + isAdmin, &ticketBookingDecision));
 
 	G_DrawTrain();
@@ -3711,7 +3721,6 @@ int TB_mainMenu() {
 				return 1;
 			}
 			strncpy(trainFilter, trainSchedule->trainID, 10);
-			G_DrawTrain();
 		}
 		if (isAdmin) {
 			if (!G_ConfirmationIsValidated("Do you want to search all member?"))
@@ -3731,15 +3740,14 @@ int TB_mainMenu() {
 				strncpy(memberFilter, loggedInMember.memberID, 11);
 			}
 		}
-		else 
+		else
 		{
+			G_DrawTrain();
 			strncpy(memberFilter, loggedInMember.memberID, 11);
 		}
-		G_DrawTrain();
 		TB_DisplayBookingRecord(trainFilter, memberFilter);
 		return 1;
 	}
-	system("cls");
 
 	//get train details
 	trainSchedule = TS_GetTrainSchedule(NULL);
@@ -3747,7 +3755,6 @@ int TB_mainMenu() {
 		printf("TS Return NULL\n");
 		return 0;
 	}
-	G_DrawTrain();
 
 	//get member details
 	if (isAdmin)
@@ -3765,7 +3772,6 @@ int TB_mainMenu() {
 			}
 		} while (inputIsError = MI_loggedInMemberDetails(memberID));
 	}
-	system("cls");
 
 	bookingRouter[ticketBookingDecision - 2](*trainSchedule);
 	MI_UpdateMemberDetails();
@@ -3777,16 +3783,16 @@ int MI_mainMenu() {
 	do {
 		if (inputIsError == ISERROR) return 0;
 
-		system("cls");
 		G_DrawTrain();
 		printf("Current member: %s\n\n", loggedInMember.memberID);
 		printf("Choose your mode: \n");
+		G_lineDesign();
 		printf("1. Member Account Management\n");
 		printf("2. Booking Management\n");
-		printf("3. View Train Schedule\n\n");
-
+		printf("3. View Train Schedule\n");
+		G_lineDesign();
 	} while (inputIsError =
-		G_IntIsValidated("Mode", 3, &staffInformationDecision));
+		G_IntIsValidated("\nMode", 3, &staffInformationDecision));
 
 	switch (staffInformationDecision) {
 	case 1:
@@ -3810,15 +3816,17 @@ int MI_mainMenuForStaff() {
 		system("cls");
 		G_DrawTrain();
 		printf("Choose your mode: \n");
-		printf("1. View Member Account\n");
-		printf("2. Search Member Account\n");
-		printf("3. Register New Member Account\n");
+		G_lineDesign();
+		printf("1. View Members\n");
+		printf("2. Search Members\n");
+		printf("3. Register Member Account\n");
 		printf("4. Register New Member Account Via txt File\n");
-		printf("5. Save Member Accounts Into New txt File\n");
-		printf("6. Edit Member Account\n");
-		printf("7. Delete Member Account\n\n");
+		printf("5. Save Members' Into New txt File\n");
+		printf("6. Edit Members' Details\n");
+		printf("7. Delete Members\n");
+		G_lineDesign();
 	} while (inputIsError =
-		G_IntIsValidated("Mode", 7, &mainMenuForStaffDecision));
+		G_IntIsValidated("\nMode", 7, &mainMenuForStaffDecision));
 
 	switch (mainMenuForStaffDecision) {
 	case 1:
@@ -3851,8 +3859,9 @@ int G_memberDetailsManagementForStaffMenu() {
 	int inputIsError = 0;
 	do {
 		if (inputIsError == ISERROR) return 0;
-		system("cls");
 		G_DrawTrain();
+		printf("Member Resources Management\n");
+		G_lineDesign();
 		printf("1. Member\'s Details Management\n");
 		printf("2. Member\'s Booking Management\n");
 		G_lineDesign();
@@ -3917,11 +3926,13 @@ int G_memberAccountManagementMenu() {
 		printf("Welcome, %s\n\n\n", loggedInMember.memberName);
 		MI_displayDetails(loggedInMember.memberID);
 		printf("Choose your mode: \n");
+		G_lineDesign();
 		printf("1. Edit Account Details\n");
 		printf("2. Top up Ewallet\n");
-		printf("3. Delete Account\n\n"); // all related booking will be cancelled also
+		printf("3. Delete Account\n"); // all related booking will be cancelled also|
+		G_lineDesign();
 	} while (inputIsError =
-		G_IntIsValidated("Mode", 3, &accountManagementMenuDecision));
+		G_IntIsValidated("\nMode", 3, &accountManagementMenuDecision));
 	switch (accountManagementMenuDecision)
 	{
 	case 1:
