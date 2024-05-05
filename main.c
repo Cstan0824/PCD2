@@ -169,7 +169,7 @@ void MI_displayDetails(string memberID);
 void MI_displayDetailsProcess(Member* allMembers, int rows, string memberID);
 void MI_topUpWallet(string memberID);
 void MI_MemberEditDetails(string memberID);
-void MI_deleteAccount(string memberID);
+void MI_memberDeleteAccount(string memberID);
 
 //Validation
 int MI_InputDetailsValidation(string value, string mode);
@@ -191,7 +191,7 @@ void MI_ErrorMessageForInputLength(int min, int max);
 //Function 
 int main() {
 
-	G_DrawTrain();
+	while (G_systemMenu());
 	return 0;
 }
 
@@ -253,7 +253,7 @@ int G_ConfirmationIsValidated(string prompt) {
 	{
 		if (inputIsError) G_ErrorMessage();
 
-		printf("%s [Y/N] >>", prompt);
+		printf("%s [Y/N]: ", prompt);
 		scanf("%[^\n]", &confirmation);
 		rewind(stdin);
 
@@ -360,7 +360,7 @@ Time G_GetTime(string prompt) {
 }
 void G_DrawTrain() {
 	int G_position = 0;
-	int G_maxPosition = 50;
+	int G_maxPosition = 30;
 	for (int i = 0; i < G_maxPosition; i++) {
 		system("cls");
 		G_shiftSpaceForDrawTrain(G_position);
@@ -386,7 +386,7 @@ void G_DrawTrain() {
 		G_shiftSpaceForDrawTrain(G_position);
 		printf("-=@==@==@=@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@=-\n");
 		G_position = (G_position + 1) % G_maxPosition;
-		Sleep(15);
+		Sleep(5);
 	}
 	printf("\n\n\n");
 }
@@ -1070,7 +1070,6 @@ int TB_CheckAccountBalance(double priceToPaid) {
 	loggedInMember.memberWallet -= priceToPaid;
 	return 1;
 }
-
 
 
 //Train Schedule
@@ -1992,7 +1991,6 @@ void SI_deleteStaff() {
 }
 
 
-
 //Member Information
 int MI_getNumberOfMembers() {
 	int rows;
@@ -2029,8 +2027,62 @@ Member* MI_getMemberDetails(int rows) {
 	fread(allMembers, sizeof(Member), rows, fptr);
 	return allMembers;
 }
-void MI_loggedInMemberDetails(string memberID) {
 
+//Register or Login [Member]
+void MI_memberLogin() {
+	char inputID[11];
+	int verify;
+	do {
+		system("cls");
+		G_DrawTrain();
+		printf("MEMBER LOGIN\n\n");
+		printf("Please enter your Member ID (at least 7, maximum 10 characters): ");
+		scanf("%[^\n]", &inputID);
+		rewind(stdin);
+		printf("\n\nPlease enter your password (at least 7, maximum 10 characters): ");
+		string inputPass = MI_getPassword();
+
+		verify = MI_verifyLogin(inputID, inputPass);
+
+		if (verify != 0) {
+			printf("Wrong ID or password.\n");
+		}
+	} while (verify != 0);
+
+	if (verify == 0) {
+		MI_loggedInMemberDetails(inputID);
+		while (MI_mainMenu());
+	}
+}
+int MI_verifyLogin(string inputID, string inputPass) {
+	int numOfMembers = MI_getNumberOfMembers();
+	Member* allMembers = MI_getMemberDetails(numOfMembers);
+	if (allMembers == NULL) {
+		printf("\nFailed to read member details.\n");
+		exit(ISERROR);
+	}
+
+	for (int i = 0; i < numOfMembers; i++) {
+		if (strcmp(allMembers[i].memberID, inputID) == 0) {
+			if (strcmp(allMembers[i].memberPass, inputPass) == 0) {
+				printf("\n\n\nLogin successful, %s\n\n\n", allMembers[i].memberName);
+				free(allMembers);
+				system("pause");
+				return 0;
+			}
+			else {
+				printf("\n\n\nLogin failed, wrong ID or password.\n");
+				system("pause");
+				free(allMembers);
+				return 1;
+			}
+		}
+	}
+	free(allMembers);
+	return 1;
+}
+void MI_loggedInMemberDetails(string memberID) {
+	//save logged-in member info into global struct
 	int numOfMembers = MI_getNumberOfMembers();
 	Member* allMembers = MI_getMemberDetails(numOfMembers);
 	for (int i = 0; i < numOfMembers; i++) {
@@ -2052,7 +2104,9 @@ void MI_registerMember() {
 	do {
 		do {
 			system("cls");
-			printf("\n\nPlease enter a new Member ID (at least 7, maximum 10 characters): ");
+			G_DrawTrain();
+			printf("MEMBER SIGN UP\n\n");
+			printf("Please enter a new Member ID (at least 7, maximum 10 characters): ");
 			scanf("%[^\n]", &newMember.memberID);
 			rewind(stdin);
 		} while (MI_InputDetailsValidation(newMember.memberID, "idOrPass") != 0);
@@ -2068,9 +2122,7 @@ void MI_registerMember() {
 
 	do {
 		do {
-			system("cls");
 			printf("\n\nPlease enter a password (at least 7, maximum 10 characters): ");
-
 			strncpy(tempPass, MI_getPassword(), 11);
 			validation = MI_InputDetailsValidation(tempPass, "idOrPass");
 		} while (validation != 0);
@@ -2139,58 +2191,12 @@ int MI_verifyRegister(string memberID) {
 	free(allMembers);
 	return 0; // ID doesn't exist
 }
-void MI_memberLogin() {
-	char inputID[11];
-	int verify;
-	do {
-		printf("Please enter your Member ID (at least 7, maximum 10 characters): ");
-		scanf("%[^\n]", &inputID);
-		rewind(stdin);
-		printf("\n\nPlease enter your password (at least 7, maximum 10 characters): ");
-		string inputPass = MI_getPassword();
 
-		verify = MI_verifyLogin(inputID, inputPass);
-
-		if (verify != 0) {
-			printf("Wrong ID or password.\n");
-		}
-	} while (verify != 0);
-
-	if (verify == 0) {
-		MI_loggedInMemberDetails(inputID);
-		while (MI_mainMenu());
-	}
-}
-int MI_verifyLogin(string inputID, string inputPass) {
-	int numOfMembers = MI_getNumberOfMembers();
-	Member* allMembers = MI_getMemberDetails(numOfMembers);
-	if (allMembers == NULL) {
-		printf("\nFailed to read member details.\n");
-		exit(ISERROR);
-	}
-
-	for (int i = 0; i < numOfMembers; i++) {
-		if (strcmp(allMembers[i].memberID, inputID) == 0) {
-			if (strcmp(allMembers[i].memberPass, inputPass) == 0) {
-				printf("\n\n\nLogin successful, %s\n", allMembers[i].memberName);
-				free(allMembers);
-				system("pause");
-				return 0;
-			}
-			else {
-				printf("\n\n\nLogin failed, wrong ID or password.\n");
-				free(allMembers);
-				return 1;
-			}
-		}
-	}
-	free(allMembers);
-	return 1;
-}
+//Member Account Management
 void MI_topUpWallet(string memberID) {
 	char tempWallet[11] = "";
 	char* endptr;
-	double tempWallet2 = 0;
+	double tempWallet2;
 	int numOfMembers = MI_getNumberOfMembers();
 	Member* allMembers = MI_getMemberDetails(numOfMembers);
 	Member newDetails = { 0 };
@@ -2204,7 +2210,7 @@ void MI_topUpWallet(string memberID) {
 				rewind(stdin);
 			} while (MI_InputDetailsValidation(tempWallet, "topUp") != 0);
 			tempWallet2 = strtod(tempWallet, &endptr);
-			tempWallet2 += allMembers[i].memberWallet;
+			tempWallet2 = allMembers[i].memberWallet + tempWallet2;
 			printf("\n\nWallet amount after top up: %.2lf\n\n", tempWallet2);
 			system("pause");
 			strcpy(newDetails.memberID, memberID);
@@ -2235,7 +2241,6 @@ void MI_topUpWallet(string memberID) {
 	printf("Wallet updated.\n\n");
 	fclose(fptrBin);
 	free(allMembers);
-	MI_mainMenu(memberID);
 }
 void MI_MemberEditDetails(string memberID) {
 	int numOfMembers = MI_getNumberOfMembers();
@@ -2250,29 +2255,37 @@ void MI_MemberEditDetails(string memberID) {
 		exit(-1);
 	}
 
-	printf("Current details: \n\n");
-	MI_displayDetails(memberID);
-
 	Member newDetails = { 0 };
 	int verify;
-	int validation = 0;
-	char tempPass[11] = "", confirmPass[11] = "";
+	int validation = 0, errorPassword;
+	char tempPass1[11] = "", tempPass2[11] = "", confirmPass[11] = "";
 	for (int i = 0; i < numOfMembers; i++) {
 		if (strcmp(memberID, allMembers[i].memberID) == 0) {
 			strcpy(newDetails.memberID, memberID);
-			if (G_ConfirmationIsValidated("\n\nDo you want to edit password? (Y/N): ")) {
+			if (G_ConfirmationIsValidated("\n\nDo you want to edit password?")) {
 				do {
 					do {
 						system("cls");
+						G_DrawTrain();
+						do {
+							errorPassword = 0;
+							printf("Please enter the current password for this account: ");
+							strncpy(tempPass1, MI_getPassword(), 11);
+							if (strcmp(tempPass1, allMembers[i].memberPass) != 0) {
+								printf("\n\nWrong password. Please try again. \n\n");
+								errorPassword = 1;
+							}
+						} while (errorPassword == 1);
+						
 						printf("\n\nPlease enter a new password (at least 7, maximum 10 characters): ");
 
-						strncpy(tempPass, MI_getPassword(), 11);
-						validation = MI_InputDetailsValidation(tempPass, "idOrPass");
+						strncpy(tempPass2, MI_getPassword(), 11);
+						validation = MI_InputDetailsValidation(tempPass2, "idOrPass");
 
 					} while (validation != 0);
 					printf("\nPlease re-enter to confirm new password: ");
 					strncpy(confirmPass, MI_getPassword(), 11);
-					verify = strncmp(tempPass, confirmPass, 11);
+					verify = strncmp(tempPass2, confirmPass, 11);
 					if (verify != 0) {
 						printf("\n\nIncorrect password. Please enter again\n\n");
 						system("pause");
@@ -2285,7 +2298,7 @@ void MI_MemberEditDetails(string memberID) {
 			else {
 				strcpy(newDetails.memberPass, allMembers[i].memberPass);
 			}
-			if (G_ConfirmationIsValidated("\n\nDo you want to edit name? (Y/N): ")) {
+			if (G_ConfirmationIsValidated("\n\nDo you want to edit name?")) {
 				do {
 					printf("New name: ");
 					scanf("%s", &newDetails.memberName);
@@ -2295,7 +2308,7 @@ void MI_MemberEditDetails(string memberID) {
 			else {
 				strcpy(newDetails.memberName, allMembers[i].memberName);
 			}
-			if (G_ConfirmationIsValidated("\n\nDo you want to edit phone number? (Y/N): ")) {
+			if (G_ConfirmationIsValidated("\n\nDo you want to edit phone number?")) {
 				do {
 					printf("New Phone Number (01XXXXXXXX or 01XXXXXXXXX): ");
 					scanf("%s", &newDetails.memberPhoneNo);
@@ -2330,11 +2343,12 @@ void MI_MemberEditDetails(string memberID) {
 	}
 	free(allMembers);
 };
-void MI_deleteAccount(string memberID) {
+void MI_memberDeleteAccount(string memberID) {
 	int numOfMembers = MI_getNumberOfMembers();
 	Member* allMembers = MI_getMemberDetails(numOfMembers);
+	int deleted = 0;
 
-	if (G_ConfirmationIsValidated("Are you sure you want to delete account? (Y/N): ")) {
+	if (G_ConfirmationIsValidated("\n\nAre you sure you want to delete account?")) {
 		// Update the binary file
 		FILE* fptrBin = fopen("member-details.bin", "wb");
 		if (!fptrBin) {
@@ -2348,17 +2362,19 @@ void MI_deleteAccount(string memberID) {
 				fwrite(&allMembers[i], sizeof(Member), 1, fptrBin);
 			}
 			else {
-				printf("\n\nAccount Deleted.\n");
-
+				printf("\n\nAccount Deleted.\n\n");
+				deleted = 1;
 			}
 
 		}
 		fclose(fptrBin);
 	}
 	free(allMembers);
+	printf("\n");
 	system("pause");
-	system("cls");
-	G_systemMenu();
+	if (deleted == 1) {
+		G_systemMenu();
+	}
 }
 void MI_displayDetails(string memberID) {
 	int numOfMembers = MI_getNumberOfMembers();
@@ -2416,7 +2432,7 @@ string MI_getPassword() {
 				printf("\b \b"); // Move cursor back, print space, move cursor back again
 			}
 		}
-		else if ((int)c <= 33 || (int)c >= 126) { // Check if printable character
+		else if ((int)c == 124 || (int)c <= 33 || (int)c >= 126) { // Check if printable character
 			continue;
 		}
 		else {
@@ -2502,7 +2518,7 @@ int MI_InputDetailsValidation(string value, string mode) {
 		else {
 			for (int i = 0; i < strlen(value); i++) {
 
-				if (isdigit(value[i]) != 0) {
+				if (!isdigit(value[i])) {
 
 					printf("\n\nYour search year has invalid input (character/symbol). Please re-enter again.\n\n");
 					system("pause");
@@ -2516,7 +2532,7 @@ int MI_InputDetailsValidation(string value, string mode) {
 
 	}
 	else if (strcmp(mode, "date-monthOrDay") == 0) {
-		if (strlen(value) > 2) {
+		if (!(strlen(value) <= 2)) {
 			G_ErrorMessage();
 			system("pause");
 			return 1;
@@ -2524,7 +2540,7 @@ int MI_InputDetailsValidation(string value, string mode) {
 		else {
 			for (int i = 0; i < strlen(value); i++) {
 
-				if (isdigit(value[i]) != 0) {
+				if (!isdigit(value[i])) {
 
 					printf("\n\nYour search has invalid input (character/symbol). Please re-enter again.\n\n");
 					system("pause");
@@ -2541,7 +2557,7 @@ int MI_InputDetailsValidation(string value, string mode) {
 		//check input rewards data type
 		for (int i = 0; i < strlen(value); i++) {
 
-			if (isdigit(value[i]) != 0) {
+			if (!isdigit(value[i])) {
 
 				printf("\n\nYour reward points has invalid input (character/symbol). Please re-enter again.\n\n");
 				system("pause");
@@ -2556,7 +2572,7 @@ int MI_InputDetailsValidation(string value, string mode) {
 	else if (strcmp(mode, "topUp") == 0) {
 		//check topup amount format
 		int dotCount = 0;
-		for (int i = 0; i < strlen(value[i]); i++) {
+		for (int i = 0; value[i]; i++) {
 			if (!isdigit(value[i])) {
 				if (value[i] == '.') {
 					dotCount++;
@@ -2571,13 +2587,16 @@ int MI_InputDetailsValidation(string value, string mode) {
 		}
 		return 0;
 	}
-	return 1;
+	return 0;
 };
 
 /*for staff use*/ void MI_displayAllMembers() {
 
 	int numOfMembers = MI_getNumberOfMembers();
 	Member* allMembers = MI_getMemberDetails(numOfMembers);
+	Date date = G_GetCurrentDate();
+	Time time = G_GetCurrentTime();
+	printf("\n\nList of Members AS OF %02d-%02d-%04d %02d:%02d\n\n", date.day, date.month, date.year, time.hour, time.min);
 	MI_displayMembersHeaderOrFooter('H');
 	for (int i = 0; i < numOfMembers; i++) {
 		// Create a new string with asterisks for the password
@@ -2598,10 +2617,11 @@ int MI_InputDetailsValidation(string value, string mode) {
 			allMembers[i].memberJoinDate.day, allMembers[i].memberJoinDate.month, allMembers[i].memberJoinDate.year, allMembers[i].memberRewards,
 			allMembers[i].memberWallet);
 		MI_displayMembersHeaderOrFooter('F');
-
 		// Free dynamically allocated memory for the password
 		free(asteriskPassword);
 	}
+	printf("\n\n");
+	system("pause");
 	free(allMembers);
 
 };
@@ -2628,12 +2648,139 @@ int MI_InputDetailsValidation(string value, string mode) {
 	}
 
 };
+/*for staff use*/ void MI_staffSearchMember() {
+	int MI_searchYear, MI_searchMonth, MI_searchDay;
+	char MI_searchID[11], MI_searchName[50];
+	int numOfMembers = MI_getNumberOfMembers();
+	Member* allMembers = MI_getMemberDetails(numOfMembers);
+	int MI_menuDecision;
+	do {
+		do {
+			system("cls");
+			G_DrawTrain();
+			printf("< SEARCH MEMBER >\n\n");
+			printf("Search member through:\n\n");
+			printf("1. Joined year\n");
+			printf("2. Joined month\n");
+			printf("3. Joined day\n");
+			printf("4. Member ID\n");
+			printf("5. Member Name\n\n");
+		} while (G_IntIsValidated("Mode", 5, &MI_menuDecision));
+
+		char tempDate[10];
+		switch (MI_menuDecision) {
+
+		case 1:
+			//based on year
+			do {
+				printf("\n\nSearch member joined on year: ");
+				scanf("%s", &tempDate);
+				rewind(stdin);
+			} while (MI_InputDetailsValidation(tempDate, "date") != 0);
+			MI_searchYear = atoi(tempDate);
+			MI_displayMembersHeaderOrFooter('H');
+			for (int i = 0; i < numOfMembers; i++) {
+				// Extract the year part from the member's join date and compare with the desired year
+				int year = allMembers[i].memberJoinDate.year;
+
+				if (year == MI_searchYear) {
+					// Print the member's details if they joined in the desired year
+					MI_displaySearchedMembers(allMembers[i].memberID);
+				}
+			}
+			break;
+		case 2:
+			//based on month
+			do {
+				printf("\n\nSearch member joined on month: ");
+				scanf("%s", &tempDate);
+				rewind(stdin);
+			} while (MI_InputDetailsValidation(tempDate, "date") != 0);
+			printf("\n\n");
+			MI_searchMonth = atoi(tempDate);
+			MI_displayMembersHeaderOrFooter('H');
+			for (int i = 0; i < numOfMembers; i++) {
+				// Extract the month part from the member's join date and compare with the searched month
+				int month = allMembers[i].memberJoinDate.month;
+
+				if (month == MI_searchMonth) {
+					// Print the member's details if they joined in the searched month
+					MI_displaySearchedMembers(allMembers[i].memberID);
+				}
+			}
+			break;
+		case 3:
+			//based on day
+			do {
+				printf("\n\nSearch member joined on day: ");
+				scanf("%s", &tempDate);
+				rewind(stdin);
+			} while (MI_InputDetailsValidation(tempDate, "date") != 0);
+			printf("\n\n");
+			MI_searchDay = atoi(tempDate);
+			MI_displayMembersHeaderOrFooter('H');
+			for (int i = 0; i < numOfMembers; i++) {
+				// Extract the day part from the member's join date and compare with the searched day
+				int day = allMembers[i].memberJoinDate.day;
+
+				if (day == MI_searchDay) {
+					// Print the member's details if they joined in the searched day
+					MI_displaySearchedMembers(allMembers[i].memberID);
+				}
+			}
+			break;
+		case 4:
+			//based on memberID
+			do {
+				printf("\n\nSearch member by member ID: ");
+				scanf("%s", &MI_searchID);
+				rewind(stdin);
+			} while (MI_InputDetailsValidation(MI_searchID, "idOrPass") != 0);
+			printf("\n\n");
+			MI_displayMembersHeaderOrFooter('H');
+			for (int i = 0; i < numOfMembers; i++) {
+
+				if (strcmp(MI_searchID, allMembers[i].memberID) == 0) {
+					MI_displaySearchedMembers(allMembers[i].memberID);
+				}
+			}
+			break;
+		case 5:
+			// based on member name
+			do {
+				printf("\n\nSearch member by member name : ");
+				scanf("%[^\n]", &MI_searchName);
+				rewind(stdin);
+			} while (MI_InputDetailsValidation(MI_searchName, "name") != 0);
+			printf("\n\n");
+			// Convert search name to lowercase
+			for (int i = 0; MI_searchName[i]; i++) {
+				MI_searchName[i] = tolower(MI_searchName[i]);
+			}
+			MI_displayMembersHeaderOrFooter('H');
+			for (int i = 0; i < numOfMembers; i++) {
+				// Convert member name to lowercase for comparison
+				char loweredMemberName[50];
+				strcpy(loweredMemberName, allMembers[i].memberName);
+				for (int j = 0; loweredMemberName[j]; j++) {
+					loweredMemberName[j] = tolower(loweredMemberName[j]);
+				}
+				if (strstr(loweredMemberName, MI_searchName) != NULL) {
+					MI_displaySearchedMembers(allMembers[i].memberID);
+				}
+			}
+			break;
+		}
+	} while (G_ConfirmationIsValidated("Do you want to continue search for members?") == 1);
+	free(allMembers);
+};
 /*for staff use*/ void MI_displaySearchedMembers(string memberID) {
 	int numOfMembers = MI_getNumberOfMembers();
 	Member* allMembers = MI_getMemberDetails(numOfMembers);
-
+	int numOfMembersFound = 0;
 	for (int i = 0; i < numOfMembers; i++) {
 		if (strncmp(memberID, allMembers[i].memberID, 11) == 0) {
+			numOfMembersFound++;
 			// Create a new string with asterisks for the password
 			int passLength = (int)strlen(allMembers[i].memberPass);
 			string asteriskPassword = (string)malloc((passLength + 1) * sizeof(char)); // +1 for null terminator
@@ -2657,131 +2804,10 @@ int MI_InputDetailsValidation(string value, string mode) {
 			free(asteriskPassword);
 		}
 	}
+	printf("\n%d member(s) found. \n\n", numOfMembersFound);
 	free(allMembers);
 
 
-};
-/*for staff use*/ void MI_staffSearchMember() {
-	int MI_searchYear, MI_searchMonth, MI_searchDay;
-	char MI_searchID[11], MI_searchName[50];
-	int numOfMembers = MI_getNumberOfMembers();
-	Member* allMembers = MI_getMemberDetails(numOfMembers);
-	int MI_menuDecision;
-	do {
-		do {
-			system("cls");
-
-			printf("Search member through:\n\n");
-			printf("1. Joined year\n");
-			printf("2. Joined month\n");
-			printf("3. Joined day\n");
-			printf("4. Member ID\n");
-			printf("5. Member Name\n");
-			printf("6. Back to menu\n\n\n");
-
-
-		} while (G_IntIsValidated("Mode: ", 6, &MI_menuDecision));
-
-		char tempDate[10];
-		switch (MI_menuDecision) {
-
-		case 1:
-			//based on year
-			do {
-				printf("Search member joined on year: ");
-				scanf("%s", &tempDate);
-				rewind(stdin);
-			} while (MI_InputDetailsValidation(tempDate, "date") != 0);
-			MI_searchYear = atoi(tempDate);
-			MI_displayMembersHeaderOrFooter('H');
-			for (int i = 0; i < numOfMembers; i++) {
-				// Extract the year part from the member's join date and compare with the desired year
-				int year = allMembers[i].memberJoinDate.year;
-
-				if (year == MI_searchYear) {
-					// Print the member's details if they joined in the desired year
-					MI_displaySearchedMembers(allMembers[i].memberID);
-				}
-			}
-			break;
-		case 2:
-			//based on month
-			do {
-				printf("Search member joined on month: ");
-				scanf("%s", &tempDate);
-				rewind(stdin);
-			} while (MI_InputDetailsValidation(tempDate, "date") != 0);
-			printf("\n\n");
-			MI_searchMonth = atoi(tempDate);
-			for (int i = 0; i < numOfMembers; i++) {
-				// Extract the month part from the member's join date and compare with the searched month
-				int month = allMembers[i].memberJoinDate.month;
-
-				if (month == MI_searchMonth) {
-					// Print the member's details if they joined in the searched month
-					MI_displaySearchedMembers(allMembers[i].memberID);
-				}
-			}
-			break;
-		case 3:
-			//based on day
-			do {
-				printf("Search member joined on day: ");
-				scanf("%s", &tempDate);
-				rewind(stdin);
-			} while (MI_InputDetailsValidation(tempDate, "date") != 0);
-			printf("\n\n");
-			MI_searchDay = atoi(tempDate);
-			for (int i = 0; i < numOfMembers; i++) {
-				// Extract the day part from the member's join date and compare with the searched day
-				int day = allMembers[i].memberJoinDate.day;
-
-				if (day == MI_searchDay) {
-					// Print the member's details if they joined in the searched day
-					MI_displaySearchedMembers(allMembers[i].memberID);
-				}
-			}
-			break;
-		case 4:
-			//based on memberID
-			do {
-				printf("Search member by member ID: ");
-				scanf("%s", &MI_searchID);
-				rewind(stdin);
-			} while (MI_InputDetailsValidation(MI_searchID, "idOrPass") != 0);
-			printf("\n\n");
-			for (int i = 0; i < numOfMembers; i++) {
-
-				if (strcmp(MI_searchID, allMembers[i].memberID) == 0) {
-					MI_displaySearchedMembers(allMembers[i].memberID);
-				}
-			}
-			break;
-		case 5:
-			//based on member name
-			do {
-				printf("Search member by member name: ");
-				scanf("%[^\n]", &MI_searchName);
-				rewind(stdin);
-			} while (MI_InputDetailsValidation(MI_searchName, "name") != 0);
-			printf("\n\n");
-			for (int i = 0; i < numOfMembers; i++) {
-
-				if (strstr(allMembers[i].memberName, MI_searchName) != NULL) {
-					MI_displaySearchedMembers(allMembers[i].memberID);
-				}
-			}
-		case 6:
-			free(allMembers);
-			exit(-1);
-			break;
-		default:
-			printf("\nInvalid decision. Redirecting...\n");
-			free(allMembers);
-			continue;
-		}
-	} while (G_ConfirmationIsValidated("Do you want to continue search for members? (Y/N)") == 1);
-	free(allMembers);
 };
 /*for staff use*/ void MI_staffAddMember() {
 
@@ -2793,6 +2819,8 @@ int MI_InputDetailsValidation(string value, string mode) {
 		do {
 			do {
 				system("cls");
+				G_DrawTrain();
+				printf("< ADD MEMBER >\n\n");
 				printf("Please enter a new Member ID (at least 7, maximum 10 characters): ");
 				scanf("%s", &newMember.memberID);
 				rewind(stdin);
@@ -2809,9 +2837,8 @@ int MI_InputDetailsValidation(string value, string mode) {
 
 		do {
 			do {
-				system("cls");
+				G_DrawTrain();
 				printf("\nPlease enter a password (at least 7, maximum 10 characters): ");
-
 				strcpy(tempPass, MI_getPassword());
 			} while (MI_InputDetailsValidation(tempPass, "idOrPass") != 0);
 
@@ -2829,13 +2856,15 @@ int MI_InputDetailsValidation(string value, string mode) {
 
 
 		do {
-			printf("\n\nPlease enter new member's name: ");
+			G_DrawTrain();
+			printf("Please enter new member's name: ");
 			scanf("%[^\n]", &newMember.memberName);
 			rewind(stdin);
 		} while (MI_InputDetailsValidation(newMember.memberName, "name") != 0);
 
 		do {
-			printf("\n\nPlease enter new member's phone number: ");
+			G_DrawTrain();
+			printf("Please enter new member's phone number: ");
 			scanf("%s", &newMember.memberPhoneNo);
 			rewind(stdin);
 		} while (MI_InputDetailsValidation(newMember.memberPhoneNo, "phoneNo") != 0);
@@ -2844,7 +2873,8 @@ int MI_InputDetailsValidation(string value, string mode) {
 		newMember.memberJoinDate = G_GetCurrentDate();
 		char tempReward[10];
 		do {
-			printf("\n\nPlease enter new member's reward points: ");
+			G_DrawTrain();
+			printf("Please enter new member's reward points: ");
 			scanf("%s", &tempReward);
 			rewind(stdin);
 		} while (MI_InputDetailsValidation(tempReward, "rewards") != 0);
@@ -2865,16 +2895,18 @@ int MI_InputDetailsValidation(string value, string mode) {
 		printf("Member %s has been registered successfully!\n\n", newMember.memberName);
 		system("pause");
 		system("cls");
-	} while (G_ConfirmationIsValidated("Do you want to add more members? (Y/N): ") == 1);
+	} while (G_ConfirmationIsValidated("Do you want to add more members?") == 1);
 };
 /*for staff use*/ void MI_staffDeleteMember() {
 	char tempID[11] = "";
 	int numOfMembers = MI_getNumberOfMembers();
 	Member* allMembers = MI_getMemberDetails(numOfMembers);
 	do {
+		system("cls");
+		G_DrawTrain();
 		MI_displayAllMembers();
-
-		printf("\n\nEnter member ID to cancel membership: ");
+		printf("< DELETE MEMBER >\n\n");
+		printf("Enter member ID to cancel membership: ");
 		scanf("%s", tempID);
 		rewind(stdin);
 
@@ -2883,7 +2915,7 @@ int MI_InputDetailsValidation(string value, string mode) {
 			if (strcmp(allMembers[i].memberID, tempID) == 0) {
 				MI_displayDetails(allMembers[i].memberID);
 
-				if (G_ConfirmationIsValidated("Are you sure you want to delete? (Y/N): ")) {
+				if (G_ConfirmationIsValidated("Are you sure you want to delete?")) {
 					// Update the binary file
 					FILE* fptrBin = fopen("member-details.bin", "wb");
 					if (!fptrBin) {
@@ -2897,7 +2929,7 @@ int MI_InputDetailsValidation(string value, string mode) {
 							fwrite(&allMembers[i], sizeof(Member), 1, fptrBin);
 						}
 						else {
-							printf("\n\nMember Deleted\n");
+							printf("\n\nMember \"%s\" Deleted.\n", allMembers[i].memberName);
 						}
 
 					}
@@ -2906,7 +2938,7 @@ int MI_InputDetailsValidation(string value, string mode) {
 
 			}
 		}
-	} while (G_ConfirmationIsValidated("Do you want to continue delete more members? (Y/N): ") == 1);
+	} while (G_ConfirmationIsValidated("Do you want to continue delete more members?") == 1);
 
 	free(allMembers);
 
@@ -2916,13 +2948,19 @@ int MI_InputDetailsValidation(string value, string mode) {
 	int numOfMembers = MI_getNumberOfMembers();
 	Member* allMembers = MI_getMemberDetails(numOfMembers);
 	do {
+		system("cls");
+		G_DrawTrain();
 		MI_displayAllMembers();
 		do {
+			printf("\n\n< EDIT MEMBER DETAILS >\n\n");
 			printf("Enter member ID to edit details: ");
 			scanf("%s", &tempID);
 			rewind(stdin);
 		} while (MI_InputDetailsValidation(tempID, "idOrPass") != 0);
+		printf("\n\n");
 		MI_displayDetails(tempID);
+		printf("\n\n");
+		system("pause");
 
 		Member newDetails = { 0 };
 		int verify;
@@ -2930,17 +2968,16 @@ int MI_InputDetailsValidation(string value, string mode) {
 		for (int i = 0; i < numOfMembers; i++) {
 			if (strcmp(tempID, allMembers[i].memberID) == 0) {
 				strcpy(newDetails.memberID, tempID);
-
-				if (G_ConfirmationIsValidated("Do you want to edit password? (Y/N): ")) {
+				G_DrawTrain();
+				if (G_ConfirmationIsValidated("Do you want to edit password?")) {
 					do {
 						do {
-							system("cls");
-							printf("\nPlease enter a new password (at least 7, maximum 10 characters): ");
+							printf("Please enter a new password (at least 7, maximum 10 characters): ");
 
 							strncpy(tempPass, MI_getPassword(), 11);
 						} while (MI_InputDetailsValidation(tempPass, "idOrPass") != 0);
 
-						printf("\nPlease re-enter to confirm new password: ");
+						printf("\n\nPlease re-enter to confirm new password: ");
 						strncpy(confirmPass, MI_getPassword(), 11);
 
 						verify = strcmp(tempPass, confirmPass);
@@ -2955,10 +2992,10 @@ int MI_InputDetailsValidation(string value, string mode) {
 				else {
 					strncpy(newDetails.memberPass, allMembers[i].memberPass, 11);
 				}
-
-				if (G_ConfirmationIsValidated("Do you want to edit name? (Y/N): ")) {
+				G_DrawTrain();
+				if (G_ConfirmationIsValidated("\nDo you want to edit name?")) {
 					do {
-						printf("New name: ");
+						printf("\nNew name: ");
 						scanf("%s", &newDetails.memberName);
 						rewind(stdin);
 					} while (MI_InputDetailsValidation(newDetails.memberName, "name") != 0);
@@ -2967,10 +3004,10 @@ int MI_InputDetailsValidation(string value, string mode) {
 					strncpy(newDetails.memberName, allMembers[i].memberName, 11);
 				}
 
-
-				if (G_ConfirmationIsValidated("Do you want to edit phone number? (Y/N): ")) {
+				G_DrawTrain();
+				if (G_ConfirmationIsValidated("\nDo you want to edit phone number?")) {
 					do {
-						printf("New phone number (XXXXXXXXXX or XXXXXXXXXXX): ");
+						printf("\nNew phone number (XXXXXXXXXX or XXXXXXXXXXX): ");
 						scanf("%s", &newDetails.memberPhoneNo);
 						rewind(stdin);
 					} while (MI_InputDetailsValidation(newDetails.memberPhoneNo, "phoneNo") != 0);
@@ -2978,10 +3015,10 @@ int MI_InputDetailsValidation(string value, string mode) {
 				else {
 					strncpy(newDetails.memberPhoneNo, allMembers[i].memberPhoneNo, 12);
 				}
-
-				if (G_ConfirmationIsValidated("Do you want to edit Joined Year? (Y/N): ")) {
+				G_DrawTrain();
+				if (G_ConfirmationIsValidated("\nDo you want to edit Joined Year?")) {
 					do {
-						printf("New joined year: ");
+						printf("\nNew joined year: ");
 						scanf("%s", &tempYear);
 						rewind(stdin);
 					} while (MI_InputDetailsValidation(tempYear, "date-year") != 0);
@@ -2991,14 +3028,14 @@ int MI_InputDetailsValidation(string value, string mode) {
 				else {
 					newDetails.memberJoinDate.year = allMembers[i].memberJoinDate.year;
 				}
-				verify = 0;
-
-				if (G_ConfirmationIsValidated("Do you want to edit Joined Month? (Y/N): ")) {
-
+				
+				G_DrawTrain();
+				if (G_ConfirmationIsValidated("\nDo you want to edit Joined Month?")) {
+					verify = 0;
 					do {
 
 						do {
-							printf("New joined month: ");
+							printf("\nNew joined month: ");
 							scanf("%s", &tempMonth);
 							rewind(stdin);
 						} while (MI_InputDetailsValidation(tempMonth, "date-monthOrDay") != 0);
@@ -3013,17 +3050,18 @@ int MI_InputDetailsValidation(string value, string mode) {
 
 						}
 
-					} while (verify = 1);
+					} while (verify != 0);
 				}
 				else {
 					newDetails.memberJoinDate.month = allMembers[i].memberJoinDate.month;
 				}
 				verify = 0;
 				int dayOfMonth[12] = { 31,29,31,30,31,30,31,31,30,31,30,31 };
-				if (G_ConfirmationIsValidated("Do you want to edit Joined Day? (Y/N): ")) {
+				G_DrawTrain();
+				if (G_ConfirmationIsValidated("\nDo you want to edit Joined Day?")) {
 					do {
 						do {
-							printf("New joined day: ");
+							printf("\n\nNew joined day: ");
 							scanf("%s", &tempDay);
 							rewind(stdin);
 						} while (MI_InputDetailsValidation(tempDay, "date-monthOrDay") != 0);
@@ -3044,10 +3082,10 @@ int MI_InputDetailsValidation(string value, string mode) {
 				else {
 					newDetails.memberJoinDate.day = allMembers[i].memberJoinDate.day;
 				}
-
-				if (G_ConfirmationIsValidated("Do you want to edit Reward Points? (Y/N): ")) {
+				G_DrawTrain();
+				if (G_ConfirmationIsValidated("\nDo you want to edit Reward Points?")) {
 					do {
-						printf("New reward points: ");
+						printf("\n\nNew reward points: ");
 						scanf("%s", &tempReward);
 						rewind(stdin);
 					} while (MI_InputDetailsValidation(tempReward, "rewards") != 0);
@@ -3077,13 +3115,15 @@ int MI_InputDetailsValidation(string value, string mode) {
 				fclose(fptrBin);
 			}
 		}
-	} while (G_ConfirmationIsValidated("Do you want to edit more members? (Y/N): ") == 1);
+	} while (G_ConfirmationIsValidated("\n\nDo you want to edit more members?") == 1);
 	free(allMembers);
 };
 /*for staff use*/ void MI_staffAddMemberViaTxt() {
 	char fileName[100];
 	do {
 		system("cls");
+		G_DrawTrain();
+		printf("< ADD MEMBER VIA TXT FILE >\n\n");
 		printf("Enter File Name: ");
 		scanf("%s", &fileName);
 		rewind(stdin);
@@ -3091,7 +3131,7 @@ int MI_InputDetailsValidation(string value, string mode) {
 		MI_AddMemberViaTxtFileProcess(fileName);
 
 
-	} while (G_ConfirmationIsValidated("Do you want to add more members via txt file? (Y/N): "));
+	} while (G_ConfirmationIsValidated("Do you want to add more members via txt file?"));
 };
 /*for admin use*/ int MI_NewMemberIsValidated(const ValidateTxt* member) {
 	// Check memberID length
@@ -3121,14 +3161,14 @@ int MI_InputDetailsValidation(string value, string mode) {
 	}
 
 	//Check join date
-	if (!(strlen(member->memberJoinDate) == 10)) {
+	if (!(strlen(member->memberJoinDate) <= 10 && strlen(member->memberJoinDate) >= 8)) {
 		return 0;
 	}
 	else {
 		char tempDay[3] = "", tempMonth[3] = "", tempYear[5] = "";
 		sscanf(member->memberJoinDate, "%s %s %s", tempDay, tempMonth, tempYear);
 		//check length of date
-		if (!((strlen(tempYear) == 4) && (strlen(tempMonth) == 2) && (strlen(tempDay) == 2))) {
+		if (!((strlen(tempYear) == 4) && (strlen(tempMonth) <= 2) && (strlen(tempDay) <= 2))) {
 			return 0;
 		}
 		//check date format
@@ -3201,6 +3241,28 @@ int MI_InputDetailsValidation(string value, string mode) {
 
 	ValidateTxt validate;
 	Member newMembers;
+
+	//check file format
+	char eachLine[257] = "";
+	while (fscanf(fptr, "%[^\n]\n", &eachLine) != EOF) {
+		int delimiter = 0;
+		for (int i = 0; i < strlen(eachLine); i++) {
+			if (eachLine[i] == '|') {
+				delimiter++;
+				if (delimiter > 6) {
+					printf("\n\nFile is in wrong format! Error.\n\n");
+					return;
+				}
+			}
+		}
+		if (delimiter != 6) {
+			printf("\n\nFile is in wrong format! Error.\n\n");
+			return;
+		}
+	}
+
+	//reset pointer if no format problem
+	rewind(fptr);
 	while (fscanf(fptr, "%[^|]|%[^|]|%[^|]|%[^|]|%[^|]|%[^|]|%[^\n]\n",
 		&validate.memberID, &validate.memberPass, &validate.memberName, &validate.memberPhoneNo,
 		&validate.memberJoinDate, &validate.memberRewards, &validate.memberWallet) == 7) {
@@ -3236,53 +3298,55 @@ int MI_InputDetailsValidation(string value, string mode) {
 			printf("Validation failed for a member.\n");
 		}
 	}
-
+	MI_displayAllMembers();
 	fclose(fptr);
 	fclose(fptr2);
 }
 /*for staff use*/ void MI_ConvertBinToTxt() {
 
-	int numOfMembers = MI_getNumberOfMembers();
-	Member* allMembers = MI_getMemberDetails(numOfMembers);
-
 	char fileName[100];
 	do {
+		int numOfMembers = MI_getNumberOfMembers();
+		Member* allMembers = MI_getMemberDetails(numOfMembers);
 		system("cls");
+		G_DrawTrain();
+		printf("< CONVERT BIN TO TXT FILE >\n\n");
 		printf("Enter new txt file name: ");
 		scanf("%s", &fileName);
 		rewind(stdin);
 
-	} while (G_ConfirmationIsValidated("Do you want to convert binary file to more txt file? (Y/N): "));
+		FILE* fptr = fopen(fileName, "w");
 
-	FILE* fptr = fopen(fileName, "w");
+		for (int i = 0; i < numOfMembers; i++) {
+			fprintf(fptr, "%s|%s|%s|%s|%d %d %d|%d|%.2lf\n", allMembers[i].memberID, allMembers[i].memberPass, allMembers[i].memberName,
+				allMembers[i].memberPhoneNo, allMembers[i].memberJoinDate.day, allMembers[i].memberJoinDate.month, allMembers[i].memberJoinDate.year,
+				allMembers[i].memberRewards, allMembers[i].memberWallet);
+		}
 
-	for (int i = 0; i < numOfMembers; i++) {
-		fprintf(fptr, "%s|%s|%s|%s|%d %d %d|%d|%.2lf\n", allMembers[i].memberID, allMembers[i].memberPass, allMembers[i].memberName,
-			allMembers[i].memberPhoneNo, allMembers[i].memberJoinDate.day, allMembers[i].memberJoinDate.month, allMembers[i].memberJoinDate.year,
-			allMembers[i].memberRewards, allMembers[i].memberWallet);
-	}
+		printf("%d member(s) has been saved into the new txt file \"%s\".\n\n", numOfMembers, fileName);
+		free(allMembers);
+		fclose(fptr);
+	} while (G_ConfirmationIsValidated("Do you want to convert binary file to more txt file?"));
 
-	printf("\n\n%d member(s) has been saved into the new txt file \"%s\".\n\n", numOfMembers, fileName);
-	free(allMembers);
-	fclose(fptr);
 };
 
 //System Menu
 int G_systemMenu()
 {
+	
 	int inputIsError = 0;
 	int systemMenuDecision;
 	do {
 		if (inputIsError == ISERROR) exit(ISERROR);
-		if (inputIsError == 1) G_ErrorMessage();
 		system("cls");
+		G_DrawTrain();
 		printf("Welcome to Xpress Railway\n\n");
 		printf("Choose your mode: \n");
 		printf("1. Member Login\n");
 		printf("2. Member Register\n");
-		printf("3. Staff Login\n");
+		printf("3. Staff Login\n\n");
 	} while (inputIsError =
-		G_IntIsValidated("Mode: ", 3, &systemMenuDecision));
+		G_IntIsValidated("Mode", 3, &systemMenuDecision));
 
 	switch (systemMenuDecision)
 	{
@@ -3303,8 +3367,8 @@ int SI_mainMenu() {
 	int inputIsError = 0;
 	do {
 		if (inputIsError == ISERROR) return 0;
-		if (inputIsError == 1) G_ErrorMessage();
 		system("cls");
+		G_DrawTrain();
 		printf("\n\t< Staff Information >\n");
 		G_lineDesign();
 		printf("1. Staff Account Management\n");
@@ -3312,7 +3376,7 @@ int SI_mainMenu() {
 		printf("3. Train Schedule Management\n");
 		G_lineDesign();
 	} while (inputIsError =
-		G_IntIsValidated("Mode: ", 3, &staffInformationDecision));
+		G_IntIsValidated("Mode", 3, &staffInformationDecision));
 	switch (staffInformationDecision) {
 	case 1:
 		while (G_staffAccountManagementMenu());
@@ -3332,16 +3396,16 @@ int TS_mainMenu() {
 	do
 	{
 		if (inputIsError == ISERROR) return 0;
-		if (inputIsError == 1) G_ErrorMessage();
 		system("cls");
+		G_DrawTrain();
 		printf("=====================================================\n");
 		printf("1.Show train schedule\n");
 		printf("2.Add train schedule\n");
 		printf("3.Search train schedule\n");
 		printf("4.Delete schedule\n");
-		printf("5.Modify train schedule\n");
+		printf("5.Modify train schedule\n\n");
 	} while (inputIsError =
-		G_IntIsValidated("Mode: ", 5, &trainScheduleDecision));
+		G_IntIsValidated("Mode", 5, &trainScheduleDecision));
 	switch (trainScheduleDecision) {
 	case 1:
 		TS_displaySchedule();
@@ -3417,16 +3481,17 @@ int MI_mainMenu() {
 	int inputIsError = 0;
 	do {
 		if (inputIsError == ISERROR) return 0;
-		if (inputIsError == 1) G_ErrorMessage();
 
 		system("cls");
+		G_DrawTrain();
+		printf("Current member: %s\n\n", loggedInMember.memberID);
 		printf("Choose your mode: \n");
 		printf("1. Member Account Management\n");
 		printf("2. Booking Management\n");
-		printf("3. View Train Schedule\n");
+		printf("3. View Train Schedule\n\n");
 
 	} while (inputIsError =
-		G_IntIsValidated("Mode: ", 3, &staffInformationDecision));
+		G_IntIsValidated("Mode", 3, &staffInformationDecision));
 
 	switch (staffInformationDecision) {
 	case 1:
@@ -3446,17 +3511,19 @@ int MI_mainMenuForStaff() {
 	int inputIsError = 0;
 	do {
 		if (inputIsError == ISERROR) return 0;
-		if (inputIsError == 1) G_ErrorMessage();
 
 		system("cls");
+		G_DrawTrain();
 		printf("Choose your mode: \n");
 		printf("1. View Member Account\n");
 		printf("2. Search Member Account\n");
 		printf("3. Register New Member Account\n");
-		printf("4. Edit Member Account\n");
-		printf("5. Delete Member Account\n");
+		printf("4. Register New Member Account Via txt File\n");
+		printf("5. Save Member Accounts Into New txt File\n");
+		printf("6. Edit Member Account\n");
+		printf("7. Delete Member Account\n\n");
 	} while (inputIsError =
-		G_IntIsValidated("Mode: ", 5, &mainMenuForStaffDecision));
+		G_IntIsValidated("Mode", 7, &mainMenuForStaffDecision));
 
 	switch (mainMenuForStaffDecision) {
 	case 1:
@@ -3469,9 +3536,15 @@ int MI_mainMenuForStaff() {
 		MI_staffAddMember();
 		break;
 	case 4:
-		MI_staffEditMemberDetails();
+		MI_staffAddMemberViaTxt();
 		break;
 	case 5:
+		MI_ConvertBinToTxt();
+		break;
+	case 6:
+		MI_staffEditMemberDetails();
+		break;
+	case 7:
 		MI_staffDeleteMember();
 		break;
 	}
@@ -3483,13 +3556,13 @@ int G_memberDetailsManagementForStaffMenu() {
 	int inputIsError = 0;
 	do {
 		if (inputIsError == ISERROR) return 0;
-		if (inputIsError == 1) G_ErrorMessage();
 		system("cls");
+		G_DrawTrain();
 		printf("1. Member\'s Details Management\n");
 		printf("2. Member\'s Booking Management\n");
 		G_lineDesign();
 	} while (inputIsError =
-		G_IntIsValidated("Mode: ", 2, &memberDetailsManagementDecision));
+		G_IntIsValidated("Mode", 2, &memberDetailsManagementDecision));
 	switch (memberDetailsManagementDecision) {
 	case 1:
 		while (MI_mainMenuForStaff());
@@ -3505,8 +3578,8 @@ int G_staffAccountManagementMenu() {
 	int inputIsError = 0;
 	do {
 		if (inputIsError == -1) return 0;
-		if (inputIsError == 1) G_ErrorMessage();
 		system("cls");
+		G_DrawTrain();
 		printf("\n\t< Staff Information >\n");
 		G_lineDesign();
 		printf("  1. Add Staff\n");
@@ -3516,7 +3589,7 @@ int G_staffAccountManagementMenu() {
 		printf("  5. Delete Staff\n");
 		G_lineDesign();
 	} while (inputIsError =
-		G_IntIsValidated("Mode: ", 5, &staffAccountManagementMenuDecision));
+		G_IntIsValidated("Mode", 5, &staffAccountManagementMenuDecision));
 	system("cls");
 	switch (staffAccountManagementMenuDecision) {
 	case 1:
@@ -3544,18 +3617,16 @@ int G_memberAccountManagementMenu() {
 		if (inputIsError == -1) {
 			return 0;
 		}
-		if (inputIsError == 1) {
-			G_ErrorMessage();
-		}
 		system("cls");
+		G_DrawTrain();
 		printf("Welcome, %s\n\n\n", loggedInMember.memberName);
 		MI_displayDetails(loggedInMember.memberID);
 		printf("Choose your mode: \n");
 		printf("1. Edit Account Details\n");
 		printf("2. Top up Ewallet\n");
-		printf("3. Delete Account\n"); // all related booking will be cancelled also
+		printf("3. Delete Account\n\n"); // all related booking will be cancelled also
 	} while (inputIsError =
-		G_IntIsValidated("Mode: ", 3, &accountManagementMenuDecision));
+		G_IntIsValidated("Mode", 3, &accountManagementMenuDecision));
 	switch (accountManagementMenuDecision)
 	{
 	case 1:
@@ -3565,7 +3636,7 @@ int G_memberAccountManagementMenu() {
 		MI_topUpWallet(loggedInMember.memberID);
 		break;
 	case 3:
-		MI_deleteAccount(loggedInMember.memberID);
+		MI_memberDeleteAccount(loggedInMember.memberID);
 		break;
 	}
 	return 1;
