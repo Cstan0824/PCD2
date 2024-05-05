@@ -365,7 +365,7 @@ void G_DrawTrain() {
 	for (int i = 0; i < G_maxPosition; i++) {
 		system("cls");
 		G_shiftSpaceForDrawTrain(G_position);
-		printf("\x1b[34m      _____________   _____________   _____________   _______________________________________^^_\n");
+		printf("      _____________   _____________   _____________   _______________________________________^^_\n");
 		G_shiftSpaceForDrawTrain(G_position);
 		printf("     |  ___   ___  |||  ___   ___  |||  ___   ___  |||  ___   ___   ___    ___ ___  |   __  ,----\\\\\n");
 		G_shiftSpaceForDrawTrain(G_position);
@@ -385,7 +385,7 @@ void G_DrawTrain() {
 		G_shiftSpaceForDrawTrain(G_position);
 		printf("-=@==@==@=@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@=-\n");
 		G_shiftSpaceForDrawTrain(G_position);
-		printf("-=@==@==@=@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@=-\x1b[0m\n");
+		printf("-=@==@==@=@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@==@=-\n");
 		G_position = (G_position + 1) % G_maxPosition;
 		Sleep(5);
 	}
