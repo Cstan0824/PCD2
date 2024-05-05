@@ -1,0 +1,500 @@
+//Train Schedule
+TrainSchedule* TS_GetTrainSchedule(string trainID)
+{
+	int numRow = G_GetTxtFileNumRow("TrainSchedule.txt");
+	TrainSchedule* trainSchedule = (TrainSchedule*)malloc(sizeof(TrainSchedule) * numRow);
+	TrainSchedule tempTrainSchedule = { 0 };
+	if (!trainSchedule) {
+		printf("Memory Allocation Failed.");
+		exit(ISERROR);
+	}
+	int selectedTrainID = 1;
+	int count = 0;
+	FILE* fptr = fopen("Schedule.txt", "r");
+	if (!fptr) {
+		printf("File unable open.\n");
+		exit(ISERROR);
+	}
+	int inputIsError = 1;
+	do {
+		if (inputIsError == -1) break;
+		printf("%-3s %-20s %-20s %-20s %-20s\n", "NO.", "Departure Station", "Arrival Station", "Departure Date", "Duration Time");
+		printf("%-3s %-20s %-20s %-20s %-20s\n", "---", "---------------", "-------------", "--------------", "-------------");
+		for (int i = 0;
+			fscanf(fptr, "%[^|]|%[^|]|%[^|]|%02d:%02d|%02d:%02d|%d|%02d/%02d/%04d|%d\n",
+				&tempTrainSchedule.trainID, &tempTrainSchedule.departureStation, &tempTrainSchedule.arrivalStation,
+				&tempTrainSchedule.departureTime.hour, &tempTrainSchedule.departureTime.min,
+				&tempTrainSchedule.arrivalTime.hour, &tempTrainSchedule.arrivalTime.min,
+				&tempTrainSchedule.availableSeat,
+				&tempTrainSchedule.departureDate.day, &tempTrainSchedule.departureDate.month, &tempTrainSchedule.departureDate.year,
+				&tempTrainSchedule.isCancelled) != EOF; )
+
+		{
+			if (tempTrainSchedule.isCancelled == 1) {
+				continue;
+			}
+			trainSchedule[i] = tempTrainSchedule;
+
+			if (trainID == NULL) {
+				printf("%02d. %-20s %-20s %02d/%02d/%04d %d:%d ~ %d:%d\n", ++count,
+					trainSchedule[i].departureStation, trainSchedule[i].arrivalStation,
+					trainSchedule[i].departureDate.day, trainSchedule[i].departureDate.month, trainSchedule[i].departureDate.year,
+					trainSchedule[i].departureTime.hour, trainSchedule[i].departureTime.min,
+					trainSchedule[i].arrivalTime.hour, trainSchedule[i].arrivalTime.min);
+				i++;
+				continue;
+			}
+			if (strncmp(trainSchedule[i].trainID, trainID, 10)) return (trainSchedule + i);
+		}
+		fclose(fptr);
+
+		if (trainID != NULL) {
+			printf("No Result founded for %s\n", trainID);
+			return NULL;
+		}
+	} while (inputIsError = G_IntIsValidated("Select The train Schedule", count, &selectedTrainID));
+	return inputIsError == -1 ? NULL : (trainSchedule + selectedTrainID - 1);
+}
+void TS_displaySchedule() {
+	int count = 0;
+	TrainSchedule train = { 0 };
+
+	FILE* fptr;
+	fptr = fopen("TrainSchedule.txt", "r");
+	if (fptr == NULL) {
+		printf("Error: Unable to open file.\n");
+		exit(ISERROR);
+	}
+
+
+	printf("%-10s %-20s %27s %24s %14s %17s %15s\n", "Train ID", "Departure Station", "Arrival Station", "Departure Time", "Arrival Time", "Available Seats", "Departure Date");
+	printf("===============================================================================================================================================\n");
+	while (fscanf(fptr, "%[^|]|%[^|]|%[^|]|%02d:%02d|%02d:%02d|%d|%02d/%02d/%04d|%d\n",
+		train.trainID, train.departureStation, train.arrivalStation,
+		&train.departureTime.hour, &train.departureTime.min,
+		&train.arrivalTime.hour, &train.arrivalTime.min,
+		&train.availableSeat,
+		&train.departureDate.day, &train.departureDate.month, &train.departureDate.year,
+		&train.isCancelled) != EOF) {
+		if (train.isCancelled == 0) {
+			printf("%-10s %-30s %-28s %-2s %02d:%02d %10s %02d:%02d %10s %-10d %-2s %02d/%02d/%04d\n",
+				train.trainID, train.departureStation, train.arrivalStation,
+				"", train.departureTime.hour, train.departureTime.min, "",
+				train.arrivalTime.hour, train.arrivalTime.min, "",
+				train.availableSeat, "", train.departureDate.day, train.departureDate.month, train.departureDate.year);
+			count++;
+		}
+	}
+	printf("Total %d record in train schedule\n", count);
+	fclose(fptr);
+	system("pause");
+}
+void TS_addSchedule() {
+	int dayOfMonth[12] = { 31,29,31,30,31,30,31,31,30,31,30,31 };
+	Date currDate = G_GetCurrentDate();
+	int diffDate = 0;
+	int count = 0;
+
+	TrainSchedule train = { 0 };
+	int inputIsError = 0;
+	int numRow = G_GetTxtFileNumRow("TrainSchedule.txt");
+	FILE* fptr = fopen("TrainSchedule.txt", "a");
+	if (!fptr) {
+		printf("Error: Unable to open file.\n");
+		exit(ISERROR);
+	}
+
+	TS_displaySchedule();
+
+	//Input the schedule details
+	do {
+		//Departure Station
+		printf("Enter the Departure Station (Enter \'0000\' to exit):");
+		scanf("%[^\n]", &train.departureStation);
+		rewind(stdin);
+		if (strncmp(train.departureStation, "0000", 50) == 0) {
+			fclose(fptr);
+			return;
+		}
+		printf("\n");
+		//Arrival Station
+		printf("Enter the Arrival Station (Enter \'0000\' to exit):");
+		scanf("%[^\n]", &train.arrivalStation);
+		rewind(stdin);
+		if (strncmp(train.arrivalStation, "0000", 50) == 0) {
+			fclose(fptr);
+			return;
+		}
+		printf("\n");
+
+
+		//Departure Time
+		train.departureTime = G_GetTime("Departure Time");
+		if (train.departureTime.hour == ISERROR) {
+			fclose(fptr);
+			return;
+		}
+		printf("\n");
+
+		//Arrival Time
+		train.arrivalTime = G_GetTime("Arrival Time");
+		if (train.arrivalTime.hour == ISERROR) {
+			fclose(fptr);
+			return;
+		}
+		printf("\n");
+
+		//Available Seat
+		do {
+			if (inputIsError == ISERROR) {
+				fclose(fptr);
+				return;
+			}
+			if (inputIsError == 1)  G_ErrorMessage();
+		} while (inputIsError =
+			G_IntIsValidated("Enter the number of Coach(each coach contains 40 seat, maximum 5 coach)", 5, &train.availableSeat));
+		printf("\n");
+
+		//Departure Date
+		do
+		{
+			if (diffDate > 0) printf("Departure Date can\'t be before current date.\n");
+
+			//Departure Date (Year)
+			while (inputIsError =
+				G_IntIsValidated("Enter the Departure Date(Years)", currDate.year, &train.departureDate.year)) {
+				if (inputIsError == -1) {
+					fclose(fptr);
+					return;
+				}
+				if (inputIsError == 1)  G_ErrorMessage();
+			}
+
+			//Departure Date(Month)
+			while (inputIsError =
+				G_IntIsValidated("Enter the Departure Date(Months)", 12, &train.departureDate.month)) {
+				if (inputIsError == -1) {
+					fclose(fptr);
+					return;
+				}
+				if (inputIsError == 1)  G_ErrorMessage();
+			}
+
+			//Calculate the day of febuary
+			dayOfMonth[1] = train.departureDate.year % 4 + 28;
+
+			//Departure Date(Day)
+			while (inputIsError =
+				G_IntIsValidated("Enter the Departure Date(Day)", dayOfMonth[train.departureDate.month - 1], &train.departureDate.day)) {
+				if (inputIsError == -1) {
+					fclose(fptr);
+					return;
+				}
+				if (inputIsError == 1)  G_ErrorMessage();
+			}
+
+			diffDate = G_CalDiffDate(currDate, train.departureDate);
+		} while (diffDate > 0);
+		diffDate = 0;
+
+		sprintf(train.trainID, "T%04d", numRow + 1 + count++); //newTrainID = numOfRow + 1
+		train.availableSeat *= 40; // numOfSeat = numOfCoach * 40
+		train.isCancelled = 0;
+		//Add Schedule
+		fprintf(fptr, "%s|%s|%s|%02d:%02d|%02d:%02d|%d|%02d/%02d/%04d|%d\n",
+			train.trainID, train.departureStation, train.arrivalStation,
+			train.departureTime.hour, train.departureTime.min,
+			train.arrivalTime.hour, train.arrivalTime.min,
+			train.availableSeat,
+			train.departureDate.day, train.departureDate.month, train.departureDate.year,
+			train.isCancelled);
+		system("cls");
+	} while (G_ConfirmationIsValidated("Do you want to continue add train Schedule?"));
+	fclose(fptr);
+	system("pause");
+}
+void TS_serachSchedule() {
+	int count = 0;
+	char searchArrivalStation[50] = "";
+	int isFound = 0;
+	TrainSchedule train = { 0 };
+
+	FILE* fptr = fopen("TrainSchedule.txt", "r");
+
+	if (!fptr) {
+		printf("Error: Unable to open file.\n");
+		exit(ISERROR);
+	}
+
+	// Display welcome message and prompt user to enter arrival station
+	printf("Welcom to the search mode\n");
+	printf("Please enter the arrival station you want (Enter 'quit' to back to main menu) : ");
+	scanf("%[^\n]", &searchArrivalStation);
+	rewind(stdin);
+	if (strncmp(searchArrivalStation, "quit", 50) == 0) {
+		fclose(fptr);
+		return;
+	}
+
+	printf("\n");
+	printf("%-10s %-20s %27s %24s %14s %17s %15s\n", "Train ID", "Departure Station", "Arrival Station", "Departure Time", "Arrival Time", "Available Seats", "Departure Date");
+	printf("===============================================================================================================================================\n");
+
+	// Loop through each line of the file and search for matching records
+	while (fscanf(fptr, "%[^|]|%[^|]|%[^|]|%02d:%02d|%02d:%02d|%d|%02d/%02d/%04d|%d\n",
+		train.trainID, train.departureStation, train.arrivalStation,
+		&train.departureTime.hour, &train.departureTime.min,
+		&train.arrivalTime.hour, &train.arrivalTime.min,
+		&train.availableSeat,
+		&train.departureDate.day, &train.departureDate.month, &train.departureDate.year,
+		&train.isCancelled) != EOF) {
+		// Check if arrival station matches user input and the train is not cancelled
+		if (strstr(strupr(train.arrivalStation), strupr(searchArrivalStation)) && train.isCancelled == 0) {
+			printf("%-10s %-30s %-28s %-2s %02d:%02d %10s %02d:%02d %10s %-10d %-2s %02d/%02d/%04d\n",
+				train.trainID, train.departureStation, train.arrivalStation,
+				"", train.departureTime.hour, train.departureTime.min, "",
+				train.arrivalTime.hour, train.arrivalTime.min, "",
+				train.availableSeat, "", train.departureDate.day, train.departureDate.month, train.departureDate.year);
+			count++;
+			isFound = 1; // Set flag to indicate matching record found
+		}
+	}
+	if (isFound) {
+		printf("Total %d record in train schedule\n", count);
+	}
+	else {
+		printf("Not result found.\n");
+	}
+	fclose(fptr);
+	system("pause");
+	system("cls");
+	// Ask user if they want to continue searching
+	if (G_ConfirmationIsValidated("Do you want to continue to search?")) {
+		TS_serachSchedule();
+	}
+}
+void TS_deleteSchedule() {
+	TrainSchedule train[100] = { 0 };
+	char TrainID[10] = "";
+	int trainCount = 0;
+	int inputIsError = 1;
+	FILE* fptrForRead = fopen("TrainSchedule.txt", "r");
+	if (!fptrForRead) {
+		printf("File cannot be opened.");
+		exit(-1);
+	}
+
+	while (fscanf(fptrForRead, "%[^|]|%[^|]|%[^|]|%02d:%02d|%02d:%02d|%d|%02d/%02d/%04d|%d\n",
+		&train[trainCount].trainID, &train[trainCount].departureStation,
+		&train[trainCount].arrivalStation, &train[trainCount].departureTime.hour, &train[trainCount].departureTime.min, &train[trainCount].arrivalTime.hour,
+		&train[trainCount].arrivalTime.min, &train[trainCount].availableSeat, &train[trainCount].departureDate.day, &train[trainCount].departureDate.month,
+		&train[trainCount].departureDate.year,
+		&train[trainCount].isCancelled) != EOF) {
+		trainCount++;
+	}
+	fclose(fptrForRead);
+
+	TS_displaySchedule();
+
+	do {
+		inputIsError = 1;
+		printf("Please enter the train ID you want to delete (Enter \'0000\' to exit): ");
+		scanf("%[^\n]", &TrainID);
+		if (strncmp(TrainID, "0000", 10) == 0) return;
+
+		rewind(stdin);
+		for (int i = 0; i < trainCount; i++) {
+			if (strncmp(TrainID, train[i].trainID, 10) == 0 && train[i].isCancelled == 0)
+			{
+				inputIsError = 0;
+				break;
+			}
+		}
+
+		if (inputIsError == 1) {
+			printf("\nThe Train ID cannot be deleted. Please enter a valid Train ID.\n");
+		}
+	} while (inputIsError);
+
+	if (G_ConfirmationIsValidated("Are you sure you want to delete this train ID (All the related booking will be cancelled also)?")) {
+		FILE* fptrForWrite = fopen("TrainSchedule.txt", "w");
+		if (!fptrForWrite) {
+			printf("File cannot be opened.");
+			exit(ISERROR);
+		}
+		for (int j = 0; j < trainCount; j++) {
+			if (strncmp(train[j].trainID, TrainID, 10) == 0) train[j].isCancelled = 1;
+			fprintf(fptrForWrite, "%s|%s|%s|%02d:%02d|%02d:%02d|%d|%02d/%02d/%04d|%d\n",
+				train[j].trainID, train[j].departureStation, train[j].arrivalStation,
+				train[j].departureTime.hour, train[j].departureTime.min,
+				train[j].arrivalTime.hour, train[j].arrivalTime.min,
+				train[j].availableSeat, train[j].departureDate.day,
+				train[j].departureDate.month, train[j].departureDate.year,
+				train[j].isCancelled);
+		}
+		fclose(fptrForWrite);
+		printf("\nTrain with ID %s has been deleted.\n", TrainID);
+	}
+	else {
+		printf("\nDeletion cancelled.\n");
+	}
+	//cancel the related booking also if the train id is cancelled
+}
+void TS_modifySchedule() {
+	TrainSchedule train[20] = { 0 };
+	TrainSchedule tempTrainSchedule = { 0 };
+	char trainID[10] = "";
+	int found = 0, trainCount = 0, count = 0;
+	int inputIsError = 0;
+
+	int dayOfMonth[12] = { 31,29,31,30,31,30,31,31,30,31,30,31 };
+	Date currDate = G_GetCurrentDate();
+	int diffDate = 0;
+
+	FILE* fptrForRead = fopen("TrainSchedule.txt", "r");
+	if (!fptrForRead) {
+		printf("File cannot be opened.");
+		exit(ISERROR);
+	}
+
+	while (fscanf(fptrForRead, "%[^|]|%[^|]|%[^|]|%02d:%02d|%02d:%02d|%d|%02d/%02d/%04d|%d\n", &train[trainCount].trainID, &train[trainCount].departureStation,
+		&train[trainCount].arrivalStation, &train[trainCount].departureTime.hour, &train[trainCount].departureTime.min, &train[trainCount].arrivalTime.hour,
+		&train[trainCount].arrivalTime.min, &train[trainCount].availableSeat, &train[trainCount].departureDate.day, &train[trainCount].departureDate.month,
+		&train[trainCount].departureDate.year,
+		&train[trainCount].isCancelled) != EOF) trainCount++;
+
+	fclose(fptrForRead);
+
+	TS_displaySchedule();
+
+	//Select Train ID to modified
+	do {
+		found = 0;
+		printf("\n\n\nTrain ID to be modified (Enter\'0000\' to exit):");
+		scanf("%[^\n]", &trainID);
+		rewind(stdin);
+		if (strncmp(trainID, "0000", 10) == 0) {
+			return;
+		}
+
+		for (int i = 0; i < trainCount; i++) {
+			if (strncmp(trainID, train[i].trainID, 10) == 0 && train[i].isCancelled == 0) {
+				found = 1;
+				//Train ID
+				strncpy(tempTrainSchedule.trainID, train[i].trainID, 10);
+
+				//Departure Station
+				printf("Enter the Departure Station (Enter \'0000\' to exit):");
+				scanf("%[^\n]", &tempTrainSchedule.departureStation);
+				rewind(stdin);
+				if (strncmp(tempTrainSchedule.departureStation, "0000", 50) == 0) {
+					return;
+				}
+
+				//Arrival Station
+				printf("Enter the Arrival Station (Enter \'0000\' to exit):");
+				scanf("%[^\n]", &tempTrainSchedule.arrivalStation);
+				rewind(stdin);
+				if (strncmp(tempTrainSchedule.arrivalStation, "0000", 50) == 0) {
+					return;
+				}
+
+				//Departure Time
+				tempTrainSchedule.departureTime = G_GetTime("Departure Time");
+				if (tempTrainSchedule.departureTime.hour == -1) {
+					return;
+				}
+
+				//Arrival Time
+				tempTrainSchedule.arrivalTime = G_GetTime("Arrival Time");
+				if (tempTrainSchedule.arrivalTime.hour == -1) {
+					return;
+				}
+
+				//Available Seat
+				do {
+					if (inputIsError == -1) {
+						return;
+					}
+					if (inputIsError == 1)  G_ErrorMessage();
+				} while (inputIsError =
+					G_IntIsValidated("Enter the number of Coach(each coach contains 40 seat, maximum 5 coach)", 5, &tempTrainSchedule.availableSeat));
+
+				//Departure Date
+				do
+				{
+					if (diffDate < 0) printf("Departure Date can\'t be before current date.\n");
+
+					//Departure Date (Year)
+					while (inputIsError =
+						G_IntIsValidated("Enter the Departure Date(Years)", currDate.year, &tempTrainSchedule.departureDate.year)) {
+						if (inputIsError == -1) {
+							return;
+						}
+						if (inputIsError == 1)  G_ErrorMessage();
+					}
+
+					//Departure Date(Month)
+					while (inputIsError =
+						G_IntIsValidated("Enter the Departure Date(Months)", 12, &tempTrainSchedule.departureDate.month)) {
+						if (inputIsError == -1) {
+							return;
+						}
+						if (inputIsError == 1)  G_ErrorMessage();
+					}
+
+					//Calculate the day of febuary
+					dayOfMonth[1] = tempTrainSchedule.departureDate.year % 4 + 28;
+
+					//Departure Date(Day)
+					while (inputIsError =
+						G_IntIsValidated("Enter the Departure Date(Days)",
+							dayOfMonth[tempTrainSchedule.departureDate.month - 1], &tempTrainSchedule.departureDate.day)) {
+						if (inputIsError == -1) {
+							return;
+						}
+						if (inputIsError == 1)  G_ErrorMessage();
+					}
+
+					diffDate = G_CalDiffDate(currDate, tempTrainSchedule.departureDate);
+				} while (diffDate > 0);
+				diffDate = 0;
+
+				//isCancelled
+				tempTrainSchedule.isCancelled = 0;
+				tempTrainSchedule.availableSeat *= 40;
+
+				if (G_ConfirmationIsValidated("\nModify Train Schedule ?"))
+				{
+					found = 0;
+					train[i] = tempTrainSchedule;
+				}
+				else {
+					printf("No changes made\n");
+				}
+			}
+		}
+
+		if (!found) {
+			printf("\nThe Train ID cannot be modified. Please enter a valid Train ID.\n");
+		}
+	} while (found == 1);
+
+	FILE* fptrForWrite = fopen("TrainSchedule.txt", "w");
+	if (!fptrForWrite)
+	{
+		printf("File cannot be opened.");
+		exit(ISERROR);
+	}
+
+	for (int j = 0; j < trainCount; j++) {
+		fprintf(fptrForWrite, "%s|%s|%s|%02d:%02d|%02d:%02d|%d|%02d/%02d/%04d|%d\n",
+			train[j].trainID, train[j].departureStation, train[j].arrivalStation,
+			train[j].departureTime.hour, train[j].departureTime.min,
+			train[j].arrivalTime.hour, train[j].arrivalTime.min,
+			train[j].availableSeat, train[j].departureDate.day,
+			train[j].departureDate.month, train[j].departureDate.year,
+			train[j].isCancelled);
+	}
+	fclose(fptrForWrite);
+}
